@@ -7,8 +7,8 @@ from yaml.loader import SafeLoader
 import time
 from datetime import datetime
 
-# --- 1. CONFIGURACIÓN E INTERFAZ MAESTRA ---
-st.set_page_config(page_title="NOVA INK - SISTEMA CLOUD", layout="wide", page_icon="🎨")
+# --- 1. CONFIGURACIÓN E INTERFAZ ---
+st.set_page_config(page_title="NOVA INK - FULL SYSTEM", layout="wide", page_icon="🎨")
 
 st.markdown('''
     <style>
@@ -37,13 +37,13 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. CONEXIÓN A GOOGLE SHEETS ---
+# --- 2. CONEXIÓN A DATOS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def get_data():
     return conn.read(worksheet="Pedidos", ttl=0)
 
-# --- 3. SEGURIDAD ---
+# --- 3. SEGURIDAD Y REGISTRO ---
 with open("config_pro.yaml") as f:
     config = yaml.load(f, Loader=SafeLoader)
 
@@ -54,99 +54,113 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
+# Pantalla de Login / Registro
 if not st.session_state.get("authentication_status"):
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
-    authenticator.login(location='main')
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        tab_login, tab_reg = st.tabs(["🔑 Iniciar Sesión", "✨ Nuevo Socio"])
+        
+        with tab_login:
+            authenticator.login(location='main')
+            if st.session_state["authentication_status"] is False:
+                st.error("Usuario o contraseña incorrectos")
+            elif st.session_state["authentication_status"] is None:
+                st.warning("Por favor, ingresa tus credenciales")
+        
+        with tab_reg:
+            with st.form("registro_nuevo"):
+                new_user = st.text_input("Usuario")
+                new_pw = st.text_input("Contraseña", type="password")
+                confirm_pw = st.text_input("Confirmar Contraseña", type="password")
+                
+                if st.form_submit_button("REGISTRAR SOCIO"):
+                    if new_pw == confirm_pw and new_user:
+                        hashed_pw = stauth.Hasher([new_pw]).generate()[0]
+                        # Nota: En la nube, esto solo dura mientras la app esté activa.
+                        # Para persistencia total de usuarios, se requiere DB externa.
+                        config['credentials']['usernames'][new_user] = {
+                            'name': new_user,
+                            'password': hashed_pw
+                        }
+                        with open("config_pro.yaml", 'w') as f:
+                            yaml.dump(config, f)
+                        st.success("Socio registrado con éxito. Ya puedes iniciar sesión.")
+                    else:
+                        st.error("Las contraseñas no coinciden o el usuario está vacío.")
+
+# --- 4. APLICACIÓN PRINCIPAL (POST-LOGIN) ---
 else:
-    # --- NAVEGACIÓN ---
     with st.sidebar:
         st.markdown("<h2 style='color:#00d4ff; text-align:center;'>NAV OS</h2>", unsafe_allow_html=True)
-        menu = st.radio("", ["📊 DASHBOARD", "📝 NUEVO PEDIDO", "💰 COTIZADOR MULTI"], label_visibility="collapsed")
+        menu = st.radio("", ["📊 DASHBOARD", "📝 NUEVO PEDIDO", "💰 COTIZADOR"], label_visibility="collapsed")
         st.divider()
         authenticator.logout('Finalizar Sesión', 'sidebar')
 
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-    # --- 📊 DASHBOARD & HISTORIAL ---
+    # --- DASHBOARD ---
     if menu == "📊 DASHBOARD":
         df = get_data()
         if df.empty:
-            st.info("No hay pedidos registrados en la nube.")
+            st.info("Sin pedidos en la nube.")
         else:
             df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True)
             df['Mes_Año'] = df['Fecha'].dt.strftime('%B %Y')
             
-            st.markdown("### 📈 ANALÍTICA MENSUAL")
+            st.markdown("### 📈 BALANCES MENSUALES")
             meses = df['Mes_Año'].unique()
             mes_sel = st.selectbox("Seleccionar Mes", meses, index=len(meses)-1)
             df_mes = df[df['Mes_Año'] == mes_sel]
 
             c1, c2, c3 = st.columns(3)
-            c1.metric(f"Ventas {mes_sel}", f"${df_mes['Monto'].sum():,.2f}")
+            c1.metric(f"Ventas", f"${df_mes['Monto'].sum():,.2f}")
             c2.metric("Pedidos", len(df_mes))
             c3.metric("Por Cobrar", f"${df_mes[df_mes['Pago'] != 'Total']['Monto'].sum():,.2f}")
 
             st.divider()
-            st.subheader("📝 Gestión de Pedidos Actuales")
             for index, row in df_mes.sort_values(by='ID', ascending=False).iterrows():
-                with st.expander(f"#{row['ID']} - {row['Cliente']} - {row['Estado']}"):
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        nuevo_pago = st.selectbox("Pago", ["Pendiente", "Seña", "Total"], index=["Pendiente", "Seña", "Total"].index(row['Pago']), key=f"p_{row['ID']}")
-                    with col2:
-                        nuevo_estado = st.selectbox("Estado", ["Producción", "Vendido", "Entregado"], index=["Producción", "Vendido", "Entregado"].index(row['Estado']) if row['Estado'] in ["Producción", "Vendido", "Entregado"] else 0, key=f"e_{row['ID']}")
-                    with col3:
-                        if st.button("Actualizar", key=f"b_{row['ID']}"):
-                            df.at[index, 'Pago'] = nuevo_pago
-                            df.at[index, 'Estado'] = nuevo_estado
+                with st.expander(f"#{row['ID']} - {row['Cliente']} ({row['Estado']})"):
+                    ca, cb, cc = st.columns(3)
+                    with ca:
+                        nPago = st.selectbox("Pago", ["Pendiente", "Seña", "Total"], index=["Pendiente", "Seña", "Total"].index(row['Pago']), key=f"p_{row['ID']}")
+                    with cb:
+                        nEst = st.selectbox("Estado", ["Producción", "Vendido", "Entregado"], index=["Producción", "Vendido", "Entregado"].index(row['Estado']) if row['Estado'] in ["Producción", "Vendido", "Entregado"] else 0, key=f"e_{row['ID']}")
+                    with cc:
+                        if st.button("Sincronizar ✅", key=f"b_{row['ID']}"):
+                            df.at[index, 'Pago'] = nPago
+                            df.at[index, 'Estado'] = nEst
                             df['Fecha'] = df['Fecha'].dt.strftime('%d/%m/%Y')
-                            df_save = df.drop(columns=['Mes_Año'])
-                            conn.update(worksheet="Pedidos", data=df_save)
-                            st.success("Sincronizado con la Nube")
-                            time.sleep(1)
+                            conn.update(worksheet="Pedidos", data=df.drop(columns=['Mes_Año']))
                             st.rerun()
 
-    # --- 📝 REGISTRO ---
+    # --- REGISTRO DE PEDIDO ---
     elif menu == "📝 NUEVO PEDIDO":
-        st.markdown("### ✍️ REGISTRO DE TRABAJO")
-        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
         with st.form("nuevo_p"):
-            cliente = st.text_input("Nombre del Cliente")
-            producto = st.text_input("Producto")
-            monto = st.number_input("Monto Total $", min_value=0.0)
-            pago = st.selectbox("Estado de Pago", ["Pendiente", "Seña", "Total"])
-            estado = st.selectbox("Estado de Producción", ["Producción", "Vendido", "Entregado"])
-            detalle = st.text_area("Notas del diseño / medidas")
+            st.markdown("### ✍️ NUEVA ENTRADA")
+            cliente = st.text_input("Cliente")
+            prod = st.text_input("Producto")
+            monto = st.number_input("Monto $", min_value=0.0)
+            pago = st.selectbox("Pago", ["Pendiente", "Seña", "Total"])
+            estado = st.selectbox("Estado", ["Producción", "Vendido", "Entregado"])
+            detalle = st.text_area("Detalle")
             
-            if st.form_submit_button("GUARDAR EN LA NUBE"):
+            if st.form_submit_button("GUARDAR EN GOOGLE SHEETS"):
                 df_orig = get_data()
-                nuevo_p = pd.DataFrame([{
+                nuevo = pd.DataFrame([{
                     "ID": len(df_orig) + 1,
                     "Fecha": datetime.now().strftime("%d/%m/%Y"),
-                    "Cliente": cliente,
-                    "Producto": producto,
-                    "Detalle": detalle,
-                    "Monto": monto,
-                    "Pago": pago,
-                    "Estado": estado
+                    "Cliente": cliente, "Producto": prod, "Detalle": detalle,
+                    "Monto": monto, "Pago": pago, "Estado": estado
                 }])
-                df_final = pd.concat([df_orig, nuevo_p], ignore_index=True)
-                conn.update(worksheet="Pedidos", data=df_final)
-                st.success("¡Pedido inyectado exitosamente!")
-                time.sleep(1)
+                conn.update(worksheet="Pedidos", data=pd.concat([df_orig, nuevo], ignore_index=True))
+                st.success("¡Guardado!")
                 st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- 💰 COTIZADOR ---
-    elif menu == "💰 COTIZADOR MULTI":
-        st.markdown("### 💰 CALCULADORA RÁPIDA")
-        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-        c1, c2 = st.columns(2)
-        with c1:
-            costo_base = st.number_input("Costo de prenda/insumo $", min_value=0.0)
-        with c2:
-            margen = st.slider("Margen de Ganancia %", 0, 300, 100)
-        
-        precio_final = costo_base * (1 + margen/100)
-        st.markdown(f"<h2 style='text-align:center; color:#00ff00;'>PRECIO: ${precio_final:,.2f}</h2>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # --- COTIZADOR ---
+    elif menu == "💰 COTIZADOR":
+        st.markdown("### 💰 CALCULADORA")
+        base = st.number_input("Costo Base $", min_value=0.0)
+        ganancia = st.slider("Ganancia %", 0, 300, 100)
+        st.header(f"Precio Sugerido: ${base * (1 + ganancia/100):,.2f}")
