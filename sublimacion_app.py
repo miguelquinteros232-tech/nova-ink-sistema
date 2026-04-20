@@ -7,44 +7,58 @@ from yaml.loader import SafeLoader
 import time
 from datetime import datetime
 
-# --- 1. CONFIGURACIÓN E INTERFAZ CON FONDO ANIMADO ---
-st.set_page_config(page_title="NOVA INK - ULTRA SYSTEM", layout="wide", page_icon="🎨")
+# --- 1. CONFIGURACIÓN Y FONDO ANIMADO "PAINT EXPLOSION" ---
+st.set_page_config(page_title="NOVA INK - ART SYSTEM", layout="wide", page_icon="🎨")
 
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
         
-        /* Fondo Animado Nova */
+        /* Fondo con Animación de Explosión de Color */
         .stApp {
-            background: linear-gradient(125deg, #05000a, #1a0033, #001a33, #05000a);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background: #05000a;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(188, 57, 253, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 212, 255, 0.15) 0%, transparent 40%),
+                url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
             color: #e0e0e0;
             font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
         }
-        
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+
+        /* Simulación de Partículas/Explosiones (CSS puro) */
+        .stApp::before {
+            content: "🧢 👕 ☕";
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            font-size: 30px;
+            opacity: 0.1;
+            animation: drift 20s linear infinite;
+            z-index: -1;
         }
-        
+
+        @keyframes drift {
+            from { transform: translateY(0) rotate(0deg) translateX(-50vw); }
+            to { transform: translateY(110vh) rotate(360deg) translateX(50vw); }
+        }
+
         .main-logo {
             font-size: 65px; font-weight: 700; text-align: center;
-            background: linear-gradient(90deg, #bc39fd, #00d4ff, #bc39fd);
-            background-size: 200% auto; -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent; animation: shine 4s linear infinite;
+            background: linear-gradient(90deg, #bc39fd, #00d4ff, #ff007b, #bc39fd);
+            background-size: 300% auto; -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; animation: shine 5s linear infinite;
             letter-spacing: 12px; margin-bottom: 30px;
-            text-shadow: 0px 0px 20px rgba(188, 57, 253, 0.4);
+            filter: drop-shadow(0px 0px 15px rgba(188, 57, 253, 0.5));
         }
-        @keyframes shine { to { background-position: 200% center; } }
+        @keyframes shine { to { background-position: 300% center; } }
 
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-left: 5px solid #bc39fd;
+            border-left: 5px solid #00d4ff;
             border-radius: 15px; padding: 25px; margin-bottom: 20px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px);
         }
     </style>
 ''', unsafe_allow_html=True)
@@ -71,113 +85,114 @@ if not st.session_state.get("authentication_status"):
 else:
     with st.sidebar:
         st.markdown("<h2 style='color:#00d4ff; text-align:center;'>NOVA OS</h2>", unsafe_allow_html=True)
-        menu = st.radio("", ["📊 DASHBOARD", "📝 NUEVO PEDIDO", "📦 INVENTARIO", "💰 COTIZADOR"], label_visibility="collapsed")
+        menu = st.radio("", ["📊 DASHBOARD", "📝 NUEVO PEDIDO", "📦 INVENTARIO", "💰 COTIZADOR INTELIGENTE"], label_visibility="collapsed")
         st.divider()
         auth.logout('Salir', 'sidebar')
 
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-    # --- 📊 DASHBOARD: BALANCES Y EDICIÓN ---
+    # --- 📊 DASHBOARD (EDICIÓN Y BALANCES) ---
     if menu == "📊 DASHBOARD":
         df = get_data("Pedidos", ['ID', 'Fecha', 'Cliente', 'Producto', 'Detalle', 'Monto', 'Pago', 'Estado'])
-        
         if not df.empty:
             df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True)
             df['Mes_Año'] = df['Fecha'].dt.strftime('%B %Y')
-            df['Año'] = df['Fecha'].dt.year
-
-            # --- SECCIÓN BALANCES ---
-            st.markdown("### 📈 BALANCE HISTÓRICO")
-            tab1, tab2 = st.tabs(["📅 Balance Mensual", "🗓️ Historial Anual"])
             
-            with tab1:
-                m_sel = st.selectbox("Seleccionar Período", df['Mes_Año'].unique(), index=len(df['Mes_Año'].unique())-1)
-                df_m = df[df['Mes_Año'] == m_sel]
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Ventas", f"${df_m['Monto'].sum():,.2f}")
-                c2.metric("Pedidos", len(df_m))
-                c3.metric("Por Cobrar", f"${df_m[df_m['Pago'] != 'Total']['Monto'].sum():,.2f}")
+            st.markdown("### 📈 MÉTRICAS")
+            m_sel = st.selectbox("Período", df['Mes_Año'].unique(), index=len(df['Mes_Año'].unique())-1)
+            df_m = df[df['Mes_Año'] == m_sel]
             
-            with tab2:
-                balance_h = df.groupby(['Año', 'Mes_Año'])['Monto'].sum().reset_index()
-                st.table(balance_h.sort_values(by='Año', ascending=False))
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Ventas", f"${df_m['Monto'].sum():,.2f}")
+            c2.metric("Órdenes", len(df_m))
+            c3.metric("Deuda", f"${df_m[df_m['Pago'] != 'Total']['Monto'].sum():,.2f}")
 
             st.divider()
-            st.subheader(f"🛠️ Gestión de Pedidos - {m_sel}")
-
             for idx, row in df_m.sort_values(by='ID', ascending=False).iterrows():
-                with st.expander(f"Pedido #{row['ID']} - {row['Cliente']}"):
-                    with st.form(f"edit_{idx}"):
-                        st.write("**Modificar datos del pedido:**")
-                        col1, col2 = st.columns(2)
-                        u_cli = col1.text_input("Cliente", value=row['Cliente'])
-                        u_prd = col1.text_input("Producto", value=row['Producto'])
-                        u_mon = col2.number_input("Monto $", value=float(row['Monto']))
-                        u_pag = col2.selectbox("Pago", ["Pendiente", "Seña", "Total"], index=["Pendiente", "Seña", "Total"].index(row['Pago']))
-                        u_est = st.selectbox("Estado", ["Producción", "Vendido", "Entregado"], index=["Producción", "Vendido", "Entregado"].index(row['Estado']) if row['Estado'] in ["Producción", "Vendido", "Entregado"] else 0)
-                        u_det = st.text_area("Detalles", value=row['Detalle'])
-                        
-                        if st.form_submit_button("GUARDAR CAMBIOS EN NUBE"):
-                            full_df = get_data("Pedidos", [])
-                            full_df.at[idx, 'Cliente'] = u_cli
-                            full_df.at[idx, 'Producto'] = u_prd
-                            full_df.at[idx, 'Monto'] = u_mon
-                            full_df.at[idx, 'Pago'] = u_pag
-                            full_df.at[idx, 'Estado'] = u_est
-                            full_df.at[idx, 'Detalle'] = u_det
-                            conn.update(worksheet="Pedidos", data=full_df)
-                            st.success("¡Pedido actualizado!"); time.sleep(0.5); st.rerun()
+                with st.expander(f"⚙️ Editar: {row['Cliente']} - {row['Producto']}"):
+                    with st.form(f"ed_{idx}"):
+                        cc1, cc2 = st.columns(2)
+                        n_cli = cc1.text_input("Cliente", row['Cliente'])
+                        n_mon = cc2.number_input("Monto $", value=float(row['Monto']))
+                        n_pag = cc1.selectbox("Pago", ["Pendiente", "Seña", "Total"], index=["Pendiente", "Seña", "Total"].index(row['Pago']))
+                        n_est = cc2.selectbox("Estado", ["Producción", "Vendido", "Entregado"], index=["Producción", "Vendido", "Entregado"].index(row['Estado']) if row['Estado'] in ["Producción", "Vendido", "Entregado"] else 0)
+                        if st.form_submit_button("GUARDAR CAMBIOS"):
+                            df.at[idx, 'Cliente'], df.at[idx, 'Monto'], df.at[idx, 'Pago'], df.at[idx, 'Estado'] = n_cli, n_mon, n_pag, n_est
+                            conn.update(worksheet="Pedidos", data=df)
+                            st.rerun()
 
-    # --- 📝 NUEVO PEDIDO ---
-    elif menu == "📝 NUEVO PEDIDO":
-        inv = get_data("Inventario", ['Categoría', 'Nombre', 'Talle/Medida', 'Color', 'Cantidad', 'Unidad', 'Minimo'])
-        with st.form("nv_form"):
-            st.subheader("📝 Registro de Venta")
-            c1, c2 = st.columns(2)
-            cli, prd = c1.text_input("Cliente"), c1.text_input("Producto")
-            mon, pag = c2.number_input("Precio $", min_value=0.0), c2.selectbox("Pago", ["Pendiente", "Seña", "Total"])
+    # --- 💰 COTIZADOR INTELIGENTE (LA MEJORA) ---
+    elif menu == "💰 COTIZADOR INTELIGENTE":
+        st.subheader("💰 Calculadora de Costo Real")
+        inv = get_data("Inventario", ['Nombre', 'Talle/Medida', 'Color', 'Cantidad'])
+        
+        with st.container():
+            st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+            col_a, col_b = st.columns(2)
             
-            st.markdown("---")
-            st.write("📦 **Insumo/Material utilizado**")
-            lista_inv = inv['Nombre'] + " (" + inv['Talle/Medida'] + " - " + inv['Color'] + ")"
-            mat_usado = st.selectbox("Seleccionar Item", ["Ninguno"] + lista_inv.tolist())
-            cant_usada = st.number_input("Cantidad", min_value=0.0, step=1.0)
+            # Selección de materiales del inventario
+            lista_items = inv['Nombre'] + " - " + inv['Talle/Medida']
+            items_c = col_a.multiselect("Selecciona los materiales usados:", lista_items.tolist())
             
-            est, det = st.selectbox("Estado", ["Producción", "Vendido", "Entregado"]), st.text_area("Notas")
+            costo_materiales = 0.0
+            for item in items_c:
+                c_unit = col_b.number_input(f"Costo unitario de {item} $", min_value=0.0, key=f"c_{item}")
+                cant_u = col_b.number_input(f"Cantidad usada de {item}", min_value=0.0, step=1.0, key=f"q_{item}")
+                costo_materiales += (c_unit * cant_u)
             
-            if st.form_submit_button("REGISTRAR PEDIDO"):
-                df_p = get_data("Pedidos", ['ID', 'Fecha', 'Cliente', 'Producto', 'Detalle', 'Monto', 'Pago', 'Estado'])
-                nueva = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), "Cliente": cli, "Producto": prd, "Detalle": f"{det} (Insumo: {cant_usada} {mat_usado})", "Monto": mon, "Pago": pag, "Estado": est}])
-                conn.update(worksheet="Pedidos", data=pd.concat([df_p, nueva], ignore_index=True))
-                
-                if mat_usado != "Ninguno":
-                    idx_i = lista_inv[lista_inv == mat_usado].index[0]
-                    inv.at[idx_i, 'Cantidad'] -= cant_usada
-                    conn.update(worksheet="Inventario", data=inv)
-                st.success("Registrado."); time.sleep(1); st.rerun()
+            st.divider()
+            costo_extra = st.number_input("Costos extra (Luz, envase, diseño) $", min_value=0.0)
+            margen = st.slider("Margen de Ganancia %", 0, 500, 100)
+            
+            costo_total = costo_materiales + costo_extra
+            precio_final = costo_total * (1 + margen/100)
+            
+            st.markdown(f"""
+                <h2 style='color:#00d4ff; text-align:center;'>COSTO TOTAL: ${costo_total:,.2f}</h2>
+                <h1 style='color:#bc39fd; text-align:center;'>PRECIO VENTA: ${precio_final:,.2f}</h1>
+                <p style='text-align:center;'>Ganancia Neta: ${(precio_final - costo_total):,.2f}</p>
+            """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # --- 📦 INVENTARIO ---
     elif menu == "📦 INVENTARIO":
         inv = get_data("Inventario", ['Categoría', 'Nombre', 'Talle/Medida', 'Color', 'Cantidad', 'Unidad', 'Minimo'])
-        st.subheader("📦 Control de Stock")
+        st.subheader("📦 Almacén Nova")
         st.dataframe(inv, use_container_width=True)
         
-        with st.expander("➕ Cargar Nuevo Item"):
-            with st.form("inv_add"):
-                cc1, cc2 = st.columns(2)
-                cat = cc1.selectbox("Categoría", ["Insumos", "Materiales (Gorras/Remeras)", "Otros"])
-                nom, tal = cc1.text_input("Nombre"), cc2.text_input("Talle/Medida")
-                col, can = cc2.text_input("Color"), st.number_input("Cantidad", min_value=0.0)
-                if st.form_submit_button("GUARDAR EN INVENTARIO"):
-                    nuevo_item = pd.DataFrame([{"Categoría": cat, "Nombre": nom, "Talle/Medida": tal, "Color": col, "Cantidad": can, "Unidad": "Unid.", "Minimo": 1.0}])
-                    conn.update(worksheet="Inventario", data=pd.concat([inv, nuevo_item], ignore_index=True))
+        with st.expander("➕ Cargar Nuevo Material"):
+            with st.form("add_i"):
+                c1, c2, c3 = st.columns(3)
+                cat = c1.selectbox("Tipo", ["Insumo", "Material (Gorra/Remera)"])
+                nom = c1.text_input("Nombre")
+                tal = c2.text_input("Talle/Medida")
+                col = c2.text_input("Color")
+                can = c3.number_input("Stock Inicial", min_value=0.0)
+                if st.form_submit_button("REGISTRAR"):
+                    n_i = pd.DataFrame([{"Categoría": cat, "Nombre": nom, "Talle/Medida": tal, "Color": col, "Cantidad": can, "Unidad": "u", "Minimo": 1.0}])
+                    conn.update(worksheet="Inventario", data=pd.concat([inv, n_i], ignore_index=True))
                     st.rerun()
 
-    # --- 💰 COTIZADOR ---
-    elif menu == "💰 COTIZADOR":
-        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-        st.subheader("💰 Calculadora de Precios")
-        costo = st.number_input("Costo base $", min_value=0.0)
-        margen = st.slider("Margen %", 0, 400, 100)
-        st.header(f"Sugerido: ${costo * (1 + margen/100):,.2f}")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # --- 📝 NUEVO PEDIDO ---
+    elif menu == "📝 NUEVO PEDIDO":
+        inv = get_data("Inventario", ['Nombre', 'Talle/Medida', 'Color', 'Cantidad'])
+        with st.form("n_p"):
+            st.subheader("📝 Nueva Orden de Producción")
+            c1, c2 = st.columns(2)
+            cli, prd = c1.text_input("Cliente"), c1.text_input("Producto Final")
+            mon, pag = c2.number_input("Precio $", min_value=0.0), c2.selectbox("Pago", ["Pendiente", "Seña", "Total"])
+            
+            lista_stock = inv['Nombre'] + " - " + inv['Talle/Medida']
+            ins_usado = st.selectbox("Material a descontar", ["Ninguno"] + lista_stock.tolist())
+            cant_d = st.number_input("Cantidad", min_value=0.0, step=1.0)
+            
+            if st.form_submit_button("CREAR PEDIDO"):
+                df_p = get_data("Pedidos", ['ID', 'Fecha', 'Cliente', 'Producto', 'Detalle', 'Monto', 'Pago', 'Estado'])
+                nueva = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), "Cliente": cli, "Producto": prd, "Detalle": f"Consumo: {cant_d} de {ins_usado}", "Monto": mon, "Pago": pag, "Estado": "Producción"}])
+                conn.update(worksheet="Pedidos", data=pd.concat([df_p, nueva], ignore_index=True))
+                
+                if ins_usado != "Ninguno":
+                    idx = lista_stock[lista_stock == ins_usado].index[0]
+                    inv.at[idx, 'Cantidad'] -= cant_d
+                    conn.update(worksheet="Inventario", data=inv)
+                st.success("¡Pedido en marcha!"); time.sleep(1); st.rerun()
