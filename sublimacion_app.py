@@ -97,37 +97,30 @@ else:
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
     # --- SECCIÓN: INVENTARIO (CON COLOR Y TIPO) ---
-    if menu == "📦 INVENTARIO":
-        st.subheader("📦 Control de Stock Detallado")
-        
-        with st.container():
-            st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-            with st.form("add_material"):
-                c1, c2, c3 = st.columns(3)
-                cat = c1.selectbox("Categoría", ["Material Base", "Insumo"])
-                nom = c1.text_input("Nombre (ej. Gorra, Remera)")
-                tip = c2.text_input("Tipo de Construcción (ej. Algodón, Cerámica)")
-                col = c2.text_input("Color / Diseño")
-                tal = c3.text_input("Talle o Medida")
-                can = c3.number_input("Cantidad Inicial", min_value=0.0)
-                
-                if st.form_submit_button("💾 GUARDAR MATERIAL"):
+  if st.form_submit_button("💾 GUARDAR MATERIAL"):
                     try:
+                        # Obtenemos datos (si la hoja está vacía, creamos un DF base)
                         df_actual = get_data("Inventario")
+                        
                         nueva_f = pd.DataFrame([{
                             "Categoría": cat, "Nombre": nom, "Tipo Material": tip, 
                             "Talle/Medida": tal, "Color": col, "Cantidad": can, "Unidad": "u"
                         }])
-                        conn.update(spreadsheet=URL_HOJA, worksheet="Inventario", data=pd.concat([df_actual, nueva_f], ignore_index=True))
-                        st.success("✅ ¡Guardado en Google Sheets!"); time.sleep(1); st.rerun()
+                        
+                        # Intentamos la actualización
+                        if df_actual is None or df_actual.empty:
+                            df_final = nueva_f
+                        else:
+                            df_final = pd.concat([df_actual, nueva_f], ignore_index=True)
+                            
+                        conn.update(spreadsheet=URL_HOJA, worksheet="Inventario", data=df_final)
+                        st.success("✅ ¡Guardado con éxito!"); time.sleep(1); st.rerun()
+                    
                     except Exception as e:
-                        st.error(f"❌ Error al guardar: {e}")
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        st.subheader("📋 Stock Actual")
-        df_inv = get_data("Inventario")
-        if not df_inv.empty:
-            st.dataframe(df_inv, use_container_width=True)
+                        # ESTO ES LO MÁS IMPORTANTE:
+                        st.error("❌ ERROR TÉCNICO DETECTADO:")
+                        st.code(str(e)) # Esto nos dirá si es un problema de permisos (403)
+                        st.info("Si el error menciona '403', el correo del JSON no tiene permiso de Editor en el Excel.")
 
     # --- SECCIÓN: COTIZADOR (CÁLCULO POR GASTO) ---
     elif menu == "💰 COTIZADOR PRO":
