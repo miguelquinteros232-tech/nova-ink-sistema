@@ -22,6 +22,7 @@ st.markdown(f'''
             background: #05000a;
             background-image: radial-gradient(circle at 15% 15%, rgba(188, 57, 253, 0.15) 0%, transparent 50%);
         }}
+        /* MARCA DE AGUA SLOGAN */
         .stApp::after {{
             content: "{SLOGAN}";
             position: fixed; bottom: 40px; right: 40px;
@@ -35,10 +36,6 @@ st.markdown(f'''
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             letter-spacing: 10px; filter: drop-shadow(0 0 10px #bc39fd);
             margin-bottom: 25px;
-        }}
-        .card {{
-            background: rgba(255, 255, 255, 0.03); border-radius: 15px;
-            padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
         }}
     </style>
 ''', unsafe_allow_html=True)
@@ -82,56 +79,54 @@ else:
             c3.metric("Entregas Listas", len(df[df['Estado'] == 'Listo']))
 
             # Gráfico de Ventas
-            df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True, errors='coerce')
-            df_v = df.groupby(df['Fecha'].dt.strftime('%m-%Y'))['Monto'].sum().reset_index()
-            fig = px.bar(df_v, x='Fecha', y='Monto', title="Ventas por Mes", template="plotly_dark", color_discrete_sequence=['#bc39fd'])
-            st.plotly_chart(fig, use_container_width=True)
+            try:
+                df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True, errors='coerce')
+                df_v = df.groupby(df['Fecha'].dt.strftime('%m-%Y'))['Monto'].sum().reset_index()
+                fig = px.bar(df_v, x='Fecha', y='Monto', title="Ventas por Mes", template="plotly_dark", color_discrete_sequence=['#bc39fd'])
+                st.plotly_chart(fig, use_container_width=True)
+            except: st.info("Cargando gráfico...")
 
             st.write("---")
             st.subheader("📋 Gestión de Pedidos")
             for i, r in df.iterrows():
                 with st.expander(f"ORDEN #{r['ID']} - {r['Cliente']} ({r['Estado']})"):
                     if r['Estado'] == "Vendido":
-                        st.warning("🔒 Esta venta está cerrada. No se permiten cambios.")
-                        st.write(f"**Descripción Original:** {r.get('Descripción', 'Sin datos')}")
-                        st.write(f"**Cobrado:** ${r['Monto']}")
+                        st.warning("🔒 Esta venta está cerrada.")
+                        st.write(f"**Descripción:** {r.get('Descripción', 'N/A')}")
                     else:
                         with st.form(f"f_ed_{i}"):
-                            col1, col2 = st.columns(2)
-                            nc = col1.text_input("Nombre Cliente", value=r['Cliente'])
-                            nm = col1.number_input("Monto $", value=float(r['Monto']))
-                            ne = col2.selectbox("Cambiar Estado", ["Producción", "Listo", "Vendido"], 
+                            nc = st.text_input("Cliente", value=r['Cliente'])
+                            nm = st.number_input("Monto $", value=float(r['Monto']))
+                            ne = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], 
                                              index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                            nd = st.text_area("Detalles del Trabajo", value=r.get('Descripción', ''))
-                            if st.form_submit_button("Guardar Cambios"):
+                            nd = st.text_area("Detalles", value=r.get('Descripción', ''))
+                            if st.form_submit_button("Guardar"):
                                 df.at[i, 'Cliente'], df.at[i, 'Monto'], df.at[i, 'Estado'], df.at[i, 'Descripción'] = nc, nm, ne, nd
                                 conn.update(spreadsheet=URL_HOJA, worksheet="Pedidos", data=df)
-                                st.success("Sincronizado"); time.sleep(1); st.rerun()
+                                st.rerun()
 
     # --- 📝 NUEVO PEDIDO ---
     elif menu == "📝 NUEVO PEDIDO":
-        st.subheader("📝 Registrar Nueva Venta")
         with st.form("new_order"):
+            st.subheader("Registrar Venta")
             c1, c2 = st.columns(2)
             cli = c1.text_input("Cliente")
             prd = c1.text_input("Producto")
             mon = c2.number_input("Precio $", min_value=0.0)
-            est = c2.selectbox("Estado Inicial", ["Producción", "Listo"])
-            des = st.text_area("Descripción de lo que el cliente quiere (Medidas, Colores, Diseños...)")
+            est = c2.selectbox("Estado", ["Producción", "Listo"])
+            des = st.text_area("Descripción (Medidas, Diseño, etc.)")
             
             if st.form_submit_button("CREAR PEDIDO"):
                 df_p = get_data("Pedidos")
                 nuevo = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), 
                                       "Cliente": cli, "Producto": prd, "Monto": mon, "Estado": est, "Descripción": des}])
                 conn.update(spreadsheet=URL_HOJA, worksheet="Pedidos", data=pd.concat([df_p, nuevo], ignore_index=True))
-                st.success("✅ ¡Orden registrada en Google Sheets!"); time.sleep(1); st.rerun()
+                st.success("✅ Guardado"); time.sleep(1); st.rerun()
 
-    # --- 📦 STOCK Y 💰 COTIZADOR ---
+    # --- 📦 STOCK & 💰 COTIZADOR ---
     elif menu == "📦 STOCK":
-        st.subheader("📦 Inventario Actual")
         st.dataframe(get_data("Inventario"), use_container_width=True)
     elif menu == "💰 COTIZADOR":
-        st.subheader("💰 Calculadora Rápida de Precios")
-        c_i = st.number_input("Costo de materiales e insumos $", min_value=0.0)
-        m_g = st.slider("Porcentaje de Ganancia %", 0, 500, 100)
-        st.title(f"Precio Sugerido: ${c_i * (1 + m_g/100):,.2f}")
+        ci = st.number_input("Costo $", min_value=0.0)
+        mg = st.slider("Ganancia %", 0, 500, 100)
+        st.title(f"Sugerido: ${ci * (1 + mg/100):,.2f}")
