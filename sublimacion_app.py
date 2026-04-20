@@ -60,9 +60,17 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 def get_data(sheet_name, cols):
     try:
+        # Intenta leer la hoja
         data = conn.read(spreadsheet=URL_HOJA, worksheet=sheet_name, ttl=0)
-        return data if data is not None and not data.empty else pd.DataFrame(columns=cols)
-    except:
+        
+        if data is None or data.empty:
+            st.warning(f"La hoja '{sheet_name}' está vacía o no existe.")
+            return pd.DataFrame(columns=cols)
+            
+        # Forzamos a que solo use las columnas que necesitamos para evitar errores
+        return data
+    except Exception as e:
+        st.error(f"⚠️ Error de conexión en '{sheet_name}': {e}")
         return pd.DataFrame(columns=cols)
 
 # --- 3. SEGURIDAD Y USUARIOS ---
