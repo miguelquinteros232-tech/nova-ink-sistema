@@ -1,6 +1,6 @@
 streamlit
-streamlit-gsheets-connection
+st-gsheets-connection
 streamlit-authenticator
 pandas
-plotly
 pyyaml
+plotly
