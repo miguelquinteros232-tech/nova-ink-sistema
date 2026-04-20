@@ -44,8 +44,12 @@ def get_data():
     return conn.read(worksheet="Pedidos", ttl=0)
 
 # --- 3. SEGURIDAD Y REGISTRO ---
-with open("config_pro.yaml") as f:
-    config = yaml.load(f, Loader=SafeLoader)
+# Cargamos el config. Si no existe, creamos una estructura base para evitar errores
+try:
+    with open("config_pro.yaml") as f:
+        config = yaml.load(f, Loader=SafeLoader)
+except FileNotFoundError:
+    config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_key', 'name': 'nova_cookie'}}
 
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -67,28 +71,29 @@ if not st.session_state.get("authentication_status"):
             if st.session_state["authentication_status"] is False:
                 st.error("Usuario o contraseña incorrectos")
             elif st.session_state["authentication_status"] is None:
-                st.warning("Por favor, ingresa tus credenciales")
+                st.warning("Ingresa tus credenciales para acceder al sistema.")
         
         with tab_reg:
             with st.form("registro_nuevo"):
-                new_user = st.text_input("Usuario")
-                new_pw = st.text_input("Contraseña", type="password")
+                new_user = st.text_input("Nombre de Usuario")
+                new_pw = st.text_input("Nueva Contraseña", type="password")
                 confirm_pw = st.text_input("Confirmar Contraseña", type="password")
                 
                 if st.form_submit_button("REGISTRAR SOCIO"):
                     if new_pw == confirm_pw and new_user:
-                        hashed_pw = stauth.Hasher([new_pw]).generate()[0]
-                        # Nota: En la nube, esto solo dura mientras la app esté activa.
-                        # Para persistencia total de usuarios, se requiere DB externa.
+                        # CORRECCIÓN AQUÍ: Nueva sintaxis para Hasher
+                        hashed_pw = stauth.Hasher.hash(new_pw)
+                        
                         config['credentials']['usernames'][new_user] = {
                             'name': new_user,
                             'password': hashed_pw
                         }
+                        # Guardamos el cambio en el archivo local
                         with open("config_pro.yaml", 'w') as f:
                             yaml.dump(config, f)
-                        st.success("Socio registrado con éxito. Ya puedes iniciar sesión.")
+                        st.success("Socio registrado. Ahora intenta iniciar sesión.")
                     else:
-                        st.error("Las contraseñas no coinciden o el usuario está vacío.")
+                        st.error("Las contraseñas no coinciden o faltan datos.")
 
 # --- 4. APLICACIÓN PRINCIPAL (POST-LOGIN) ---
 else:
@@ -104,9 +109,11 @@ else:
     if menu == "📊 DASHBOARD":
         df = get_data()
         if df.empty:
-            st.info("Sin pedidos en la nube.")
+            st.info("No hay registros en Google Sheets.")
         else:
-            df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True)
+            # Asegurar formato de fecha
+            df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True, errors='coerce')
+            df = df.dropna(subset=['Fecha']) # Limpiar filas vacías si existen
             df['Mes_Año'] = df['Fecha'].dt.strftime('%B %Y')
             
             st.markdown("### 📈 BALANCES MENSUALES")
@@ -129,14 +136,17 @@ else:
                         nEst = st.selectbox("Estado", ["Producción", "Vendido", "Entregado"], index=["Producción", "Vendido", "Entregado"].index(row['Estado']) if row['Estado'] in ["Producción", "Vendido", "Entregado"] else 0, key=f"e_{row['ID']}")
                     with cc:
                         if st.button("Sincronizar ✅", key=f"b_{row['ID']}"):
-                            df.at[index, 'Pago'] = nPago
-                            df.at[index, 'Estado'] = nEst
-                            df['Fecha'] = df['Fecha'].dt.strftime('%d/%m/%Y')
-                            conn.update(worksheet="Pedidos", data=df.drop(columns=['Mes_Año']))
+                            # Volvemos a leer para no sobreescribir otros cambios
+                            df_full = get_data() 
+                            # Actualizamos
+                            df_full.at[index, 'Pago'] = nPago
+                            df_full.at[index, 'Estado'] = nEst
+                            conn.update(worksheet="Pedidos", data=df_full)
                             st.rerun()
 
     # --- REGISTRO DE PEDIDO ---
     elif menu == "📝 NUEVO PEDIDO":
+        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
         with st.form("nuevo_p"):
             st.markdown("### ✍️ NUEVA ENTRADA")
             cliente = st.text_input("Cliente")
@@ -154,13 +164,18 @@ else:
                     "Cliente": cliente, "Producto": prod, "Detalle": detalle,
                     "Monto": monto, "Pago": pago, "Estado": estado
                 }])
-                conn.update(worksheet="Pedidos", data=pd.concat([df_orig, nuevo], ignore_index=True))
-                st.success("¡Guardado!")
+                df_final = pd.concat([df_orig, nuevo], ignore_index=True)
+                conn.update(worksheet="Pedidos", data=df_final)
+                st.success("¡Pedido inyectado correctamente!")
+                time.sleep(1)
                 st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # --- COTIZADOR ---
     elif menu == "💰 COTIZADOR":
-        st.markdown("### 💰 CALCULADORA")
-        base = st.number_input("Costo Base $", min_value=0.0)
+        st.markdown("### 💰 CALCULADORA RÁPIDA")
+        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+        base = st.number_input("Costo Base (Insumo) $", min_value=0.0)
         ganancia = st.slider("Ganancia %", 0, 300, 100)
         st.header(f"Precio Sugerido: ${base * (1 + ganancia/100):,.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
