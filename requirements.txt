@@ -4,3 +4,5 @@ streamlit-authenticator
 pandas
 pyyaml
 plotly
+gspread
+google-auth
