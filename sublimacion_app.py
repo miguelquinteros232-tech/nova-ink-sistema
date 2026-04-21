@@ -68,30 +68,50 @@ if not st.session_state.get("authentication_status"):
 elif st.session_state["authentication_status"]:
     
     # Conexión Directa a Google Sheets (Gspread)
-    @st.cache_resource
-    def get_gspread_client():
+   # --- 3. CONEXIÓN DIRECTA A GOOGLE SHEETS (GSPREAD) ---
+@st.cache_resource
+def get_gspread_client():
+    try:
         scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        creds_dict = st.secrets["connections"]["gsheets"]
+        
+        # Intentar obtener credenciales de los Secrets
+        if "connections" not in st.secrets or "gsheets" not in st.secrets["connections"]:
+            st.error("❌ No se encontraron las credenciales en los Secrets de Streamlit.")
+            st.stop()
+            
+        creds_dict = dict(st.secrets["connections"]["gsheets"])
+        
+        # Corregir posibles problemas de saltos de línea en la clave privada
+        if "private_key" in creds_dict:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         return gspread.authorize(credentials)
-
-    try:
-        client = get_gspread_client()
-        SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
-        sh = client.open_by_key(SHEET_ID)
-        ws_pedidos = sh.worksheet("Pedidos")
-        ws_inventario = sh.worksheet("Inventario")
     except Exception as e:
-        st.error(f"Error de conexión con Google: {e}")
+        st.error(f"❌ Error al autenticar con Google: {str(e)}")
         st.stop()
 
-    with st.sidebar:
-        st.markdown(f"### 👤 {st.session_state['name']}")
-        menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
-        st.divider()
-        authenticator.logout('Cerrar Sesión', 'sidebar')
-
-    st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
+try:
+    client = get_gspread_client()
+    SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
+    sh = client.open_by_key(SHEET_ID)
+    
+    # Intentar acceder a las pestañas y avisar si no existen
+    try:
+        ws_pedidos = sh.worksheet("Pedidos")
+        ws_inventario = sh.worksheet("Inventario")
+    except gspread.exceptions.WorksheetNotFound:
+        st.error("❌ No se encontró la pestaña 'Pedidos' o 'Inventario' en el Excel.")
+        st.info("Asegúrate de que los nombres de las pestañas sean exactos.")
+        st.stop()
+        
+except gspread.exceptions.PermissionDenied:
+    st.error("❌ Error de Permisos: El bot no tiene acceso a la hoja.")
+    st.info("Copia el 'client_email' de tus Secrets y dale permisos de EDITOR en tu Google Sheet.")
+    st.stop()
+except Exception as e:
+    st.error(f"❌ Error inesperado: {e}")
+    st.stop()
 
     # --- A. DASHBOARD (BALANCE Y GESTIÓN) ---
     if menu == "📊 DASHBOARD":
