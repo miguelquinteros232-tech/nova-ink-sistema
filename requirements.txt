@@ -1,8 +1,6 @@
 streamlit
-st-gsheets-connection
-streamlit-authenticator
-pandas
-pyyaml
-plotly
 gspread
 google-auth
+streamlit-authenticator
+pyyaml
+pandas
