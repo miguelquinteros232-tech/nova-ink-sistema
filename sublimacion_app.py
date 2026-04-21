@@ -62,14 +62,24 @@ if not st.session_state.get("authentication_status"):
 # --- 4. APLICACIÓN PRINCIPAL (ACCESO CONCEDIDO) ---
 elif st.session_state["authentication_status"]:
     
-    @st.cache_resource
+   @st.cache_resource
     def get_gspread_client():
-        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        creds_dict = dict(st.secrets["connections"]["gsheets"])
-        if "private_key" in creds_dict:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        return gspread.authorize(credentials)
+        try:
+            scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+            
+            # 1. Cargamos las credenciales desde Secrets
+            creds_dict = dict(st.secrets["connections"]["gsheets"])
+            
+            # 2. LIMPIEZA CRÍTICA: Reparamos los saltos de línea de la clave privada
+            if "private_key" in creds_dict:
+                # Esto soluciona el 90% de los errores de conexión en Streamlit Cloud
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            
+            credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+            return gspread.authorize(credentials)
+        except Exception as e:
+            st.error(f"❌ Error al procesar credenciales: {e}")
+            st.stop()
 
     # Conexión con manejo de errores de permisos
     try:
