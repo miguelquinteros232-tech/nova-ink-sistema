@@ -76,19 +76,20 @@ elif st.session_state["authentication_status"]:
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         return gspread.authorize(credentials)
 
-    # Conexión a la hoja
-    client = get_gspread_client()
-    SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
-    sh = client.open_by_key(SHEET_ID)
-    ws_pedidos = sh.worksheet("Pedidos")
-    ws_inventario = sh.worksheet("Inventario")
-
-    with st.sidebar:
-        st.markdown(f"### 👤 {st.session_state['name']}")
-        menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
-        authenticator.logout('Cerrar Sesión', 'sidebar')
-
-    st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
+    # --- CONEXIÓN REFORZADA ---
+    try:
+        client = get_gspread_client()
+        SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
+        sh = client.open_by_key(SHEET_ID)
+        ws_pedidos = sh.worksheet("Pedidos")
+        ws_inventario = sh.worksheet("Inventario")
+    except gspread.exceptions.PermissionDenied:
+        st.error("❌ ERROR DE PERMISOS")
+        st.info(f"Copia este correo y dale permiso de EDITOR en tu Google Sheet: \n\n `{st.secrets['connections']['gsheets']['client_email']}`")
+        st.stop()
+    except Exception as e:
+        st.error(f"❌ Error de conexión: {e}")
+        st.stop()
 
     # --- DASHBOARD ---
     if menu == "📊 DASHBOARD":
