@@ -7,8 +7,8 @@ from yaml.loader import SafeLoader
 import time
 from datetime import datetime
 
-# --- 1. CONFIGURACIÓN VISUAL (ESTILO CYBERPUNK) ---
-st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide", page_icon="🎨")
+# --- 1. IDENTIDAD VISUAL ---
+st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 URL_LOGO_REAL = "https://i.postimg.cc/85M9m9zV/nova-ink-logo.png" 
 
@@ -36,7 +36,7 @@ st.markdown(f'''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. SEGURIDAD Y ACCESO ---
+# --- 2. SEGURIDAD ---
 def load_config():
     try:
         with open("config_pro.yaml") as f: return yaml.load(f, Loader=SafeLoader)
@@ -52,156 +52,122 @@ if not st.session_state.get("authentication_status"):
     with t2:
         if auth.register_user(location='main'):
             with open("config_pro.yaml", 'w') as f: yaml.dump(config, f)
-            st.success('Usuario registrado.')
+            st.success('Registrado.')
 else:
-    # --- 3. CONEXIÓN A DATOS ---
+    # --- 3. CONEXIÓN REFORZADA ---
     conn = st.connection("gsheets", type=GSheetsConnection)
     SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
 
     with st.sidebar:
-        st.write(f"👤 Operador: {st.session_state['name']}")
-        menu = st.radio("MENÚ PRINCIPAL", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
-        st.divider()
+        st.write(f"👤 {st.session_state['name']}")
+        menu = st.radio("SISTEMA", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
         auth.logout('Cerrar Sesión', 'sidebar')
 
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-    # --- A. DASHBOARD (BALANCE Y GESTIÓN) ---
+    # --- A. DASHBOARD (GESTIÓN Y BALANCE) ---
     if menu == "📊 DASHBOARD":
         try:
             df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
-            if not df_p.empty:
-                # Limpieza de datos numéricos
+            if df_p is not None and not df_p.empty:
                 df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
                 df_p['Gasto_Prod'] = pd.to_numeric(df_p['Gasto_Prod'], errors='coerce').fillna(0)
                 
-                ventas_totales = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
-                gastos_totales = df_p['Gasto_Prod'].sum()
+                ventas = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
+                gastos = df_p['Gasto_Prod'].sum()
                 
                 c1, c2, c3 = st.columns(3)
-                c1.metric("INGRESOS (Ventas)", f"${ventas_totales:,.2f}")
-                c2.metric("GASTOS (Producción)", f"${gastos_totales:,.2f}")
-                c3.metric("UTILIDAD NETA", f"${ventas_totales - gastos_totales:,.2f}")
+                c1.metric("INGRESOS REALES", f"${ventas:,.2f}")
+                c2.metric("GASTOS TOTALES", f"${gastos:,.2f}")
+                c3.metric("UTILIDAD NETA", f"${ventas - gastos:,.2f}")
 
                 st.divider()
-                st.subheader("📋 Gestión de Pedidos Activos")
-                
                 for i, r in df_p.iterrows():
-                    is_sold = r['Estado'] == "Vendido"
-                    label = f"{'🔒' if is_sold else '⚙️'} {r['ID']} | {r['Cliente']} - {r['Producto']}"
-                    
-                    with st.expander(label):
-                        if is_sold:
-                            st.warning("Este pedido ha sido finalizado y la edición está bloqueada.")
+                    bloqueado = r['Estado'] == "Vendido"
+                    with st.expander(f"{'🔒' if bloqueado else '⚙️'} {r['ID']} - {r['Cliente']}"):
+                        if bloqueado:
+                            st.warning("PEDIDO FINALIZADO. Edición bloqueada.")
                             st.json(r.to_dict())
                         else:
-                            with st.form(f"form_edit_{i}"):
-                                col_a, col_b = st.columns(2)
-                                nuevo_estado = col_a.selectbox("Estado", ["Producción", "Listo", "Vendido"], 
-                                                              index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                                nuevo_monto = col_b.number_input("Precio Final $", value=float(r['Monto']))
-                                nuevas_notas = st.text_area("Notas/Descripción", value=r.get('Descripcion', ''))
-                                
-                                if st.form_submit_button("Actualizar Pedido"):
-                                    df_p.at[i, 'Estado'] = nuevo_estado
-                                    df_p.at[i, 'Monto'] = nuevo_monto
-                                    df_p.at[i, 'Descripcion'] = nuevas_notas
+                            with st.form(f"edit_{i}"):
+                                c_a, c_b = st.columns(2)
+                                n_est = c_a.selectbox("Estado", ["Producción", "Listo", "Vendido"], 
+                                                     index=["Producción", "Listo", "Vendido"].index(r['Estado']))
+                                n_mon = c_b.number_input("Precio $", value=float(r['Monto']))
+                                n_gas = c_b.number_input("Gasto $", value=float(r['Gasto_Prod']))
+                                n_det = st.text_area("Detalles", value=r['Detalle'])
+                                if st.form_submit_button("Actualizar Registro"):
+                                    df_p.at[i, 'Estado'], df_p.at[i, 'Monto'] = n_est, n_mon
+                                    df_p.at[i, 'Gasto_Prod'], df_p.at[i, 'Detalle'] = n_gas, n_det
                                     conn.update(spreadsheet=SHEET_ID, worksheet="Pedidos", data=df_p)
-                                    st.success("Sincronizado con la nube"); time.sleep(1); st.rerun()
+                                    st.rerun()
             else:
-                st.info("No hay pedidos registrados en la base de datos.")
+                st.info("No hay pedidos registrados.")
         except Exception as e:
-            st.error(f"Error al cargar pedidos: {e}")
+            st.error(f"Error en Dashboard: {e}")
 
-    # --- B. STOCK (CONTROL DETALLADO) ---
+    # --- B. STOCK (INVENTARIO DETALLADO) ---
     elif menu == "📦 STOCK":
         try:
             df_inv = conn.read(spreadsheet=SHEET_ID, worksheet="Inventario", ttl=0)
+            if df_inv is None: df_inv = pd.DataFrame(columns=['Categoría', 'Nombre', 'Tipo Material', 'Talle/Medida', 'Color', 'Cantidad', 'Unidad'])
             
-            with st.expander("➕ AGREGAR NUEVO MATERIAL AL INVENTARIO"):
-                with st.form("nuevo_material"):
+            with st.expander("➕ CARGAR NUEVO MATERIAL"):
+                with st.form("add_stock"):
                     c1, c2 = st.columns(2)
-                    v_cat = c1.selectbox("Categoría", ["Telas", "Tazas", "Gorras", "Remeras", "Tintas", "Papel", "Otros"])
-                    v_nom = c1.text_input("Nombre del Producto")
-                    v_tip = c2.text_input("Tipo de Material")
-                    v_tal = c2.text_input("Talle o Medida")
-                    v_col = c1.text_input("Color")
-                    v_can = c2.number_input("Cantidad Inicial", min_value=0.0)
-                    v_uni = c2.text_input("Unidad (Un, Metros, Hojas)")
-                    
-                    if st.form_submit_button("Registrar en Stock"):
-                        nuevo_item = pd.DataFrame([{
-                            "Categoría": v_cat, "Nombre": v_nom, "Tipo Material": v_tip,
-                            "Talle/Medida": v_tal, "Color": v_col, "Cantidad": v_can, "Unidad": v_uni
-                        }])
-                        df_updated = pd.concat([df_inv, nuevo_item], ignore_index=True)
-                        conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=df_updated)
-                        st.success("Inventario actualizado"); time.sleep(1); st.rerun()
-            
-            st.subheader("📦 Inventario Actual")
+                    cat, nom = c1.text_input("Categoría"), c1.text_input("Nombre")
+                    tip, tal = c2.text_input("Tipo Material"), c2.text_input("Talle/Medida")
+                    col, can = c1.text_input("Color"), c2.number_input("Cantidad", min_value=0.0)
+                    uni = c2.text_input("Unidad")
+                    if st.form_submit_button("Guardar en Inventario"):
+                        nuevo = pd.DataFrame([{"Categoría": cat, "Nombre": nom, "Tipo Material": tip, "Talle/Medida": tal, "Color": col, "Cantidad": can, "Unidad": uni}])
+                        conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=pd.concat([df_inv, nuevo], ignore_index=True))
+                        st.rerun()
+            st.subheader("📦 Stock Disponible")
             st.dataframe(df_inv, use_container_width=True)
         except Exception as e:
-            st.error(f"Error en inventario: {e}")
+            st.error(f"Error en Stock: {e}")
 
-    # --- C. NUEVO PEDIDO (CON DESCUENTO AUTOMÁTICO) ---
+    # --- C. NUEVO PEDIDO (CON DESCUENTO DE STOCK) ---
     elif menu == "📝 NUEVO PEDIDO":
         try:
             df_inv = conn.read(spreadsheet=SHEET_ID, worksheet="Inventario", ttl=0)
             df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
             
-            with st.form("form_nuevo_pedido"):
-                st.subheader("Nueva Orden de Producción")
+            with st.form("new_order_form"):
+                st.subheader("Registro de Producción")
                 c1, c2 = st.columns(2)
-                p_cli = c1.text_input("Cliente")
-                p_prd = c2.text_input("Producto a realizar")
-                p_mon = c1.number_input("Monto a Cobrar $", min_value=0.0)
-                p_gas = c2.number_input("Costo de Materiales $ (Gasto)", min_value=0.0)
+                cli, prd = c1.text_input("Cliente"), c1.text_input("Producto")
+                mon, gas = c2.number_input("Precio Cobrado $"), c2.number_input("Costo Materiales $")
                 
                 st.divider()
-                st.write("🔧 Descontar Insumo")
-                p_mat = st.selectbox("Seleccionar Material del Stock", df_inv['Nombre'].tolist() if not df_inv.empty else ["Sin Stock"])
-                p_can = st.number_input("Cantidad a usar", min_value=0.1)
-                p_det = st.text_area("Detalles del Diseño (Talle, Color, Fecha entrega)")
-
-                if st.form_submit_button("REGISTRAR PEDIDO Y DESCONTAR STOCK"):
-                    if not df_inv.empty and p_mat != "Sin Stock":
-                        # 1. Restar del Stock
-                        idx = df_inv[df_inv['Nombre'] == p_mat].index[0]
-                        df_inv.at[idx, 'Cantidad'] -= p_can
+                mat_list = df_inv['Nombre'].tolist() if (df_inv is not None and not df_inv.empty) else []
+                mat_sel = st.selectbox("Material a descontar", mat_list if mat_list else ["Sin materiales"])
+                can_u = st.number_input("Cantidad usada", min_value=0.1)
+                det_p = st.text_area("Detalles del Diseño")
+                
+                if st.form_submit_button("REGISTRAR Y DESCONTAR"):
+                    if mat_sel != "Sin materiales":
+                        # Descuento de stock
+                        idx = df_inv[df_inv['Nombre'] == mat_sel].index[0]
+                        df_inv.at[idx, 'Cantidad'] -= can_u
                         conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=df_inv)
-                        
-                        # 2. Crear el Pedido
+                        # Registro de pedido
                         nuevo_p = pd.DataFrame([{
-                            "ID": len(df_p) + 1,
-                            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "Cliente": p_cli,
-                            "Producto": p_prd,
-                            "Detalle": p_det,
-                            "Monto": p_mon,
-                            "Estado": "Producción",
-                            "Gasto_Prod": p_gas,
-                            "Descripcion": ""
+                            "ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"),
+                            "Cliente": cli, "Producto": prd, "Detalle": det_p,
+                            "Monto": mon, "Estado": "Producción", "Gasto_Prod": gas, "Descripcion": ""
                         }])
                         conn.update(spreadsheet=SHEET_ID, worksheet="Pedidos", data=pd.concat([df_p, nuevo_p], ignore_index=True))
-                        st.success("✅ Pedido creado y Stock actualizado."); time.sleep(1); st.rerun()
+                        st.success("✅ Pedido registrado y stock actualizado."); time.sleep(1); st.rerun()
                     else:
-                        st.error("No se puede descontar stock. Revisa el inventario.")
+                        st.error("No hay materiales en stock para descontar.")
         except Exception as e:
-            st.error(f"Fallo al crear pedido: {e}")
+            st.error(f"Error al crear pedido: {e}")
 
     # --- D. COTIZADOR ---
     elif menu == "💰 COTIZADOR":
-        st.subheader("💰 Calculadora de Precios Sugeridos")
-        with st.container():
-            c_costo = st.number_input("Inversión total en materiales $", min_value=0.0)
-            c_margen = st.slider("% de Ganancia deseada", 0, 500, 100)
-            
-            sugerido = c_costo * (1 + c_margen/100)
-            
-            st.markdown(f"""
-            <div style="background: rgba(188, 57, 253, 0.2); padding: 20px; border-radius: 15px; border: 1px solid #bc39fd; text-align: center;">
-                <h2 style="color: white; margin: 0;">PRECIO SUGERIDO</h2>
-                <h1 style="color: #00d4ff; font-size: 60px; margin: 10px 0;">${sugerido:,.2f}</h1>
-                <p style="color: #ccc;">Usa el valor de 'Inversión' como 'Gasto Prod' al cargar el pedido.</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.subheader("💰 Calculadora de Precios")
+        costo = st.number_input("Inversión en insumos $")
+        margen = st.slider("% Ganancia deseada", 0, 500, 100)
+        st.title(f"Sugerido: ${costo * (1 + margen/100):,.2f}")
