@@ -8,132 +8,155 @@ import time
 from datetime import datetime
 import plotly.express as px
 
-# --- 1. CONFIGURACIÓN ---
-st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
+# --- 1. CONFIGURACIÓN E IDENTIDAD VISUAL ---
+st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide", page_icon="🎨")
 
-# Estilos CSS
-st.markdown('''
+# Reemplaza con la URL de tu logo real para la marca de agua
+URL_LOGO_MARCA = "https://tu-enlace-de-imagen.com/logo.png" 
+
+st.markdown(f'''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-        .stApp { background: #05000a; }
-        .main-logo {
-            font-family: 'Orbitron'; font-size: 50px; text-align: center;
+        .stApp {{ background: #05000a; }}
+        .stApp::after {{
+            content: ""; position: fixed; bottom: 50px; right: 50px;
+            width: 250px; height: 250px; background-image: url("{URL_LOGO_MARCA}");
+            background-size: contain; background-repeat: no-repeat;
+            opacity: 0.05; pointer-events: none; z-index: 0;
+        }}
+        .main-logo {{
+            font-family: 'Orbitron'; font-size: clamp(30px, 8vw, 60px); text-align: center;
             background: linear-gradient(90deg, #bc39fd, #00d4ff, #bc39fd);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px #bc39fd); margin-bottom: 20px;
-        }
+            letter-spacing: 10px; filter: drop-shadow(0 0 10px #bc39fd); margin-bottom: 20px;
+        }}
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. FUNCIONES DE DATOS ---
+# --- 2. GESTIÓN DE USUARIOS ---
 def load_config():
     try:
         with open("config_pro.yaml") as f: return yaml.load(f, Loader=SafeLoader)
     except: return {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_p'}}
 
+def save_config(cfg):
+    with open("config_pro.yaml", 'w') as f: yaml.dump(cfg, f, default_flow_style=False)
+
 config = load_config()
 authenticator = stauth.Authenticate(config['credentials'], config['cookie']['name'], config['cookie']['key'], config['cookie']['expiry_days'])
 
+# --- 3. INTERFAZ DE ACCESO ---
 if not st.session_state.get("authentication_status"):
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
-    auth_tab1, auth_tab2 = st.tabs(["🔐 Entrar", "📝 Registro"])
-    with auth_tab1: authenticator.login(location='main')
-    with auth_tab2:
-        if authenticator.register_user(location='main'):
-            with open("config_pro.yaml", 'w') as f: yaml.dump(config, f); st.success('Registrado')
+    t1, t2 = st.tabs(["🔐 Entrar", "📝 Registro"])
+    with t1: authenticator.login(location='main')
+    with t2:
+        try:
+            if authenticator.register_user(location='main'):
+                save_config(config); st.success('✅ Registrado.')
+        except Exception as e: st.error(f"Error: {e}")
 else:
-    # CONEXIÓN USANDO SECRETS (SERVICE ACCOUNT)
+    # --- 4. CONEXIÓN A GOOGLE SHEETS (USANDO SECRETS) ---
     conn = st.connection("gsheets", type=GSheetsConnection)
-
+    
     with st.sidebar:
-        st.write(f"### Operador: {st.session_state['name']}")
-        menu = st.radio("SISTEMA", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.markdown(f"### 👤 {st.session_state['name']}")
+        menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.divider()
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-    # --- LÓGICA DE DASHBOARD (BALANCE) ---
+    # --- FUNCIONES DE NEGOCIO ---
+    def get_data(ws):
+        return conn.read(worksheet=ws, ttl=0)
+
+    # A. SECCIÓN DASHBOARD (BALANCE Y BLOQUEO)
     if menu == "📊 DASHBOARD":
-        df_p = conn.read(worksheet="Pedidos", ttl=0)
+        df_p = get_data("Pedidos")
         if not df_p.empty:
-            # Ventas reales (solo estado Vendido)
-            ventas_reales = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
-            # Gastos de producción (de todos los pedidos cargados)
-            gastos_totales = df_p['Gasto_Prod'].sum() if 'Gasto_Prod' in df_p.columns else 0
+            ingresos = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
+            gastos = df_p['Gasto_Prod'].sum() if 'Gasto_Prod' in df_p.columns else 0
             
             c1, c2, c3 = st.columns(3)
-            c1.metric("Ingresos Reales", f"${ventas_reales:,.2f}")
-            c2.metric("Gastos Producción", f"${gastos_totales:,.2f}")
-            c3.metric("Utilidad Neta", f"${ventas_reales - gastos_totales:,.2f}")
+            c1.metric("Ingresos (Ventas)", f"${ingresos:,.2f}")
+            c2.metric("Gastos Producción", f"${gastos:,.2f}")
+            c3.metric("Balance Neto", f"${ingresos - gastos:,.2f}")
 
-            st.subheader("📋 Control de Órdenes")
+            st.subheader("📋 Gestión de Pedidos")
             for i, r in df_p.iterrows():
                 bloqueado = r['Estado'] == "Vendido"
-                with st.expander(f"{'🔒' if bloqueado else '✏️'} {r['ID']} - {r['Cliente']}"):
+                with st.expander(f"{'🔒' if bloqueado else '✏️'} {r['ID']} - {r['Cliente']} ({r['Estado']})"):
                     if bloqueado:
-                        st.info("Este pedido ya fue vendido. Registro histórico bloqueado.")
-                        st.table(pd.DataFrame([r]))
+                        st.info("Venta finalizada. Este registro es histórico y no puede modificarse.")
+                        st.write(f"**Detalle:** {r['Detalle']} | **Monto:** ${r['Monto']}")
                     else:
-                        with st.form(f"edit_{i}"):
-                            nuevo_estado = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                            nueva_desc = st.text_area("Descripción", value=r['Descripcion'])
-                            if st.form_submit_button("Guardar Cambios"):
-                                df_p.at[i, 'Estado'] = nuevo_estado
-                                df_p.at[i, 'Descripcion'] = nueva_desc
+                        with st.form(f"form_ed_{i}"):
+                            new_est = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], index=["Producción", "Listo", "Vendido"].index(r['Estado']))
+                            new_desc = st.text_area("Descripción", value=r.get('Descripcion', ''))
+                            if st.form_submit_button("Sincronizar"):
+                                df_p.at[i, 'Estado'], df_p.at[i, 'Descripcion'] = new_est, new_desc
                                 conn.update(worksheet="Pedidos", data=df_p)
                                 st.rerun()
 
-    # --- LÓGICA DE STOCK (ESTRUCTURA SOLICITADA) ---
+    # B. SECCIÓN STOCK (GESTIÓN COMPLETA)
     elif menu == "📦 STOCK":
-        df_inv = conn.read(worksheet="Inventario", ttl=0)
-        with st.form("nuevo_item"):
-            st.subheader("Registrar en Inventario")
-            c1, c2, c3 = st.columns(3)
-            cat = c1.text_input("Categoría")
-            nom = c2.text_input("Nombre")
-            tip = c3.text_input("Tipo Material")
-            tal = c1.text_input("Talle/Medida")
-            col = c2.text_input("Color")
-            can = c3.number_input("Cantidad", min_value=0)
-            if st.form_submit_button("Agregar"):
-                nuevo = pd.DataFrame([{"Categoría": cat, "Nombre": nom, "Tipo Material": tip, "Talle/Medida": tal, "Color": col, "Cantidad": can}])
-                df_final = pd.concat([df_inv, nuevo], ignore_index=True)
-                conn.update(worksheet="Inventario", data=df_final)
-                st.rerun()
+        st.subheader("📦 Inventario de Materiales")
+        df_inv = get_data("Inventario")
+        
+        with st.expander("➕ REGISTRAR / ACTUALIZAR MATERIAL"):
+            with st.form("f_stock"):
+                c1, c2 = st.columns(2)
+                cat = c1.text_input("Categoría")
+                nom = c1.text_input("Nombre")
+                tip = c2.text_input("Tipo Material")
+                tal = c2.text_input("Talle/Medida")
+                col = c1.text_input("Color")
+                can = c2.number_input("Cantidad", min_value=0)
+                uni = c1.text_input("Unidad (Hojas, Unids, etc.)")
+                if st.form_submit_button("Guardar"):
+                    nuevo = pd.DataFrame([{"Categoría": cat, "Nombre": nom, "Tipo Material": tip, "Talle/Medida": tal, "Color": col, "Cantidad": can, "Unidad": uni}])
+                    conn.update(worksheet="Inventario", data=pd.concat([df_inv, nuevo], ignore_index=True))
+                    st.rerun()
         st.dataframe(df_inv, use_container_width=True)
 
-    # --- LÓGICA DE PEDIDO Y DESCUENTO AUTOMÁTICO ---
+    # C. SECCIÓN NUEVO PEDIDO (RESTA AUTOMÁTICA)
     elif menu == "📝 NUEVO PEDIDO":
-        df_inv = conn.read(worksheet="Inventario", ttl=0)
-        with st.form("pedido_form"):
-            st.subheader("Crear Pedido y Descontar Stock")
+        df_inv = get_data("Inventario")
+        with st.form("n_pedido"):
+            st.subheader("Crear Orden y Descontar Stock")
             c1, c2 = st.columns(2)
             cli = c1.text_input("Cliente")
-            prod = c2.text_input("Producto")
-            monto = c1.number_input("Monto $")
-            gasto = c2.number_input("Gasto de producción $")
+            prod = c2.text_input("Producto Final")
+            monto = c1.number_input("Monto a cobrar $")
+            gasto = c2.number_input("Gasto en materiales $")
             
-            material = st.selectbox("Material a usar", df_inv['Nombre'].tolist() if not df_inv.empty else [])
-            cantidad_usada = st.number_input("Cantidad a descontar", min_value=1)
+            mat_select = st.selectbox("Material a descontar", df_inv['Nombre'].tolist() if not df_inv.empty else [])
+            cant_restar = st.number_input("Cantidad usada", min_value=1)
             
-            if st.form_submit_button("Crear Orden"):
-                # 1. Restar del inventario
-                idx = df_inv[df_inv['Nombre'] == material].index[0]
-                df_inv.at[idx, 'Cantidad'] -= cantidad_usada
+            det = st.text_area("Detalle/Medidas")
+            
+            if st.form_submit_button("Registrar Pedido"):
+                # 1. Restar Stock
+                idx = df_inv[df_inv['Nombre'] == mat_select].index[0]
+                df_inv.at[idx, 'Cantidad'] -= cant_restar
                 conn.update(worksheet="Inventario", data=df_inv)
                 
-                # 2. Agregar pedido
-                df_p = conn.read(worksheet="Pedidos", ttl=0)
-                nuevo_p = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), "Cliente": cli, "Producto": prod, "Monto": monto, "Estado": "Producción", "Gasto_Prod": gasto, "Descripcion": ""}])
-                conn.update(worksheet="Pedidos", data=pd.concat([df_p, nuevo_p], ignore_index=True))
-                st.success("Stock actualizado y pedido registrado")
-                time.sleep(1); st.rerun()
+                # 2. Guardar Pedido
+                df_ped = get_data("Pedidos")
+                nuevo_p = pd.DataFrame([{
+                    "ID": len(df_ped)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"),
+                    "Cliente": cli, "Producto": prod, "Detalle": det, "Monto": monto,
+                    "Estado": "Producción", "Gasto_Prod": gasto, "Descripcion": ""
+                }])
+                conn.update(worksheet="Pedidos", data=pd.concat([df_ped, nuevo_p], ignore_index=True))
+                st.success("✅ Pedido creado y Stock actualizado."); time.sleep(1); st.rerun()
 
-    # --- LÓGICA DE COTIZADOR ---
+    # D. SECCIÓN COTIZADOR
     elif menu == "💰 COTIZADOR":
-        st.subheader("Calculadora de Producción")
-        mat_cost = st.number_input("Gasto en materiales $")
-        margen = st.slider("% Ganancia", 0, 300, 100)
-        total = mat_cost * (1 + margen/100)
-        st.metric("Precio Sugerido", f"${total:,.2f}")
-        st.info("Este gasto se puede cargar luego en la sección de Nuevo Pedido.")
+        st.subheader("💰 Calculadora de Producción")
+        mat = st.number_input("Inversión en materiales $")
+        margen = st.slider("% Ganancia", 0, 500, 100)
+        total = mat * (1 + margen/100)
+        st.title(f"Sugerido: ${total:,.2f}")
+        st.info("Este monto de 'Inversión' es el que debes colocar en 'Gasto_Prod' al crear el pedido.")
