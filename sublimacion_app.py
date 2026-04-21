@@ -12,7 +12,7 @@ import plotly.express as px
 st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide", page_icon="🎨")
 
 # URL LIMPIA (Sin el /edit al final)
-URL_HOJA = "https://docs.google.com/spreadsheets/d/11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
+URL_HOJA = "https://docs.google.com/spreadsheets/d/11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8/edit?gid=0#gid=0"
 SLOGAN = "CALIDAD QUE DEJA HUELLA"
 
 st.markdown(f'''
