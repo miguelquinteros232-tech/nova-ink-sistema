@@ -11,17 +11,14 @@ import plotly.express as px
 # --- 1. CONFIGURACIÓN E IDENTIDAD VISUAL ---
 st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide", page_icon="🎨")
 
-ID_SHEET = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
-URL_HOJA = f"https://docs.google.com/spreadsheets/d/{ID_SHEET}/edit?usp=sharing"
+# URL LIMPIA (Sin el /edit al final)
+URL_HOJA = "https://docs.google.com/spreadsheets/d/11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
 SLOGAN = "CALIDAD QUE DEJA HUELLA"
 
 st.markdown(f'''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-        .stApp {{
-            background: #05000a;
-            background-image: radial-gradient(circle at 15% 15%, rgba(188, 57, 253, 0.15) 0%, transparent 50%);
-        }}
+        .stApp {{ background: #05000a; background-image: radial-gradient(circle at 15% 15%, rgba(188, 57, 253, 0.15) 0%, transparent 50%); }}
         .stApp::after {{
             content: "{SLOGAN}";
             position: fixed; bottom: 40px; right: 40px;
@@ -42,48 +39,28 @@ st.markdown(f'''
 # --- 2. GESTIÓN DE CONFIGURACIÓN ---
 def load_config():
     try:
-        with open("config_pro.yaml") as f:
-            return yaml.load(f, Loader=SafeLoader)
-    except:
-        return {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_p'}}
+        with open("config_pro.yaml") as f: return yaml.load(f, Loader=SafeLoader)
+    except: return {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_p'}}
 
-def save_config(config):
-    with open("config_pro.yaml", 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
+def save_config(cfg):
+    with open("config_pro.yaml", 'w') as f: yaml.dump(cfg, f, default_flow_style=False)
 
 config = load_config()
-
-# --- 3. AUTENTICACIÓN ---
-# Inicializar el autenticador
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
-)
+authenticator = stauth.Authenticate(config['credentials'], config['cookie']['name'], config['cookie']['key'], config['cookie']['expiry_days'])
 
 st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-# Pestañas de acceso
-tab_login, tab_register = st.tabs(["🔐 Entrar", "📝 Registro"])
-
-with tab_login:
-    # CORRECCIÓN AQUÍ: Manejo seguro del login según versión
+# Login y Registro
+t_log, t_reg = st.tabs(["🔐 Entrar", "📝 Registro"])
+with t_log: authenticator.login(location='main')
+with t_reg:
     try:
-        authenticator.login(location='main')
-    except Exception:
-        st.error("Error en el sistema de autenticación.")
-
-with tab_register:
-    try:
-        # Registro de nuevos usuarios
         if authenticator.register_user(location='main'):
             save_config(config)
-            st.success('✅ Usuario registrado. Ya puedes iniciar sesión.')
-    except Exception as e:
-        st.error(f'Error al registrar: {e}')
+            st.success('✅ Registrado. Ya puedes entrar.')
+    except Exception as e: st.error(f'Error: {e}')
 
-# --- 4. LÓGICA DE SESIÓN ---
+# --- 4. SISTEMA PRINCIPAL ---
 if st.session_state["authentication_status"]:
     conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -93,69 +70,61 @@ if st.session_state["authentication_status"]:
         st.divider()
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    # --- DASHBOARD ---
+    # Función segura para leer datos
+    def safe_read(worksheet):
+        try:
+            return conn.read(spreadsheet=URL_HOJA, worksheet=worksheet, ttl=0)
+        except Exception as e:
+            st.error(f"⚠️ Error de conexión con Google Sheets en la hoja '{worksheet}'. Verifica que la hoja sea pública.")
+            return pd.DataFrame()
+
     if menu == "📊 DASHBOARD":
-        df = conn.read(spreadsheet=URL_HOJA, worksheet="Pedidos", ttl=0)
-        if df is not None and not df.empty:
+        df = safe_read("Pedidos")
+        if not df.empty:
             c1, c2, c3 = st.columns(3)
-            c1.metric("Ventas Totales", f"${df['Monto'].sum():,.2f}")
+            c1.metric("Ingresos", f"${df['Monto'].sum():,.2f}")
             c2.metric("En Producción", len(df[df['Estado'] == 'Producción']))
             c3.metric("Listos", len(df[df['Estado'] == 'Listo']))
 
-            # Gráfico Mensual
             try:
                 df['Fecha'] = pd.to_datetime(df['Fecha'], dayfirst=True, errors='coerce')
                 df_v = df.groupby(df['Fecha'].dt.strftime('%m-%Y'))['Monto'].sum().reset_index()
-                fig = px.bar(df_v, x='Fecha', y='Monto', title="Ventas Mensuales", template="plotly_dark", color_discrete_sequence=['#bc39fd'])
-                st.plotly_chart(fig, use_container_width=True)
-            except:
-                st.info("Gráfico cargando...")
+                st.plotly_chart(px.bar(df_v, x='Fecha', y='Monto', template="plotly_dark", color_discrete_sequence=['#bc39fd']), use_container_width=True)
+            except: pass
 
-            st.write("---")
             st.subheader("📋 Gestión de Pedidos")
             for i, r in df.iterrows():
                 with st.expander(f"Orden #{r['ID']} - {r['Cliente']}"):
-                    if r['Estado'] == "Vendido":
-                        st.warning("🔒 Venta finalizada (Solo lectura)")
-                        st.write(f"**Descripción:** {r.get('Descripción', 'N/A')}")
-                    else:
-                        with st.form(f"edit_{i}"):
-                            nc = st.text_input("Cliente", value=r['Cliente'])
-                            nm = st.number_input("Monto $", value=float(r['Monto']))
-                            ne = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], 
-                                             index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                            nd = st.text_area("Descripción detallada", value=r.get('Descripción', ''))
-                            if st.form_submit_button("Actualizar"):
-                                df.at[i, 'Cliente'], df.at[i, 'Monto'], df.at[i, 'Estado'], df.at[i, 'Descripción'] = nc, nm, ne, nd
-                                conn.update(spreadsheet=URL_HOJA, worksheet="Pedidos", data=df)
-                                st.success("¡Sincronizado!"); time.sleep(1); st.rerun()
+                    with st.form(f"ed_{i}"):
+                        nc = st.text_input("Cliente", value=r['Cliente'])
+                        nm = st.number_input("Monto $", value=float(r['Monto']))
+                        ne = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], index=["Producción", "Listo", "Vendido"].index(r['Estado']))
+                        nd = st.text_area("Descripción", value=r.get('Descripción', ''))
+                        if st.form_submit_button("Actualizar"):
+                            df.at[i, 'Cliente'], df.at[i, 'Monto'], df.at[i, 'Estado'], df.at[i, 'Descripción'] = nc, nm, ne, nd
+                            conn.update(spreadsheet=URL_HOJA, worksheet="Pedidos", data=df)
+                            st.rerun()
 
-    # --- NUEVO PEDIDO ---
     elif menu == "📝 NUEVO PEDIDO":
-        with st.form("new_order"):
-            st.subheader("Nueva Orden")
+        with st.form("new"):
+            st.subheader("Registrar Venta")
             c1, c2 = st.columns(2)
-            cli = c1.text_input("Cliente")
-            prd = c1.text_input("Producto")
-            mon = c2.number_input("Monto $", min_value=0.0)
-            est = c2.selectbox("Estado Inicial", ["Producción", "Listo"])
-            des = st.text_area("Descripción detallada (Talles, Diseño, etc.)")
-            if st.form_submit_button("REGISTRAR"):
-                df_p = conn.read(spreadsheet=URL_HOJA, worksheet="Pedidos", ttl=0)
-                nuevo = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), 
-                                      "Cliente": cli, "Producto": prd, "Monto": mon, "Estado": est, "Descripción": des}])
+            cli, prd = c1.text_input("Cliente"), c1.text_input("Producto")
+            mon, est = c2.number_input("Precio $"), c2.selectbox("Estado", ["Producción", "Listo"])
+            des = st.text_area("Descripción (Talles, Diseño...)")
+            if st.form_submit_button("CREAR"):
+                df_p = safe_read("Pedidos")
+                nuevo = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), "Cliente": cli, "Producto": prd, "Monto": mon, "Estado": est, "Descripción": des}])
                 conn.update(spreadsheet=URL_HOJA, worksheet="Pedidos", data=pd.concat([df_p, nuevo], ignore_index=True))
                 st.success("✅ Guardado"); time.sleep(1); st.rerun()
 
-    # --- OTROS ---
     elif menu == "📦 STOCK":
-        st.dataframe(conn.read(spreadsheet=URL_HOJA, worksheet="Inventario", ttl=0), use_container_width=True)
+        st.dataframe(safe_read("Inventario"), use_container_width=True)
+    
     elif menu == "💰 COTIZADOR":
         ci = st.number_input("Costo $", min_value=0.0)
         mg = st.slider("Ganancia %", 0, 500, 100)
         st.title(f"Sugerido: ${ci * (1 + mg/100):,.2f}")
 
 elif st.session_state["authentication_status"] is False:
-    st.error('Usuario/Contraseña incorrectos')
-elif st.session_state["authentication_status"] is None:
-    st.info('Por favor, introduce tus credenciales o regístrate.')
+    st.error('Credenciales incorrectas')
