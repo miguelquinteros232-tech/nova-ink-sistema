@@ -71,35 +71,33 @@ else:
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
     # --- A. DASHBOARD (BALANCE Y LÓGICA DE CIERRE) ---
-    if menu == "📊 DASHBOARD":
-        try:
-            df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
-            if not df_p.empty:
-                ventas = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
-                gastos = df_p['Gasto_Prod'].sum() if 'Gasto_Prod' in df_p.columns else 0
+    f menu == "📊 DASHBOARD":
+    try:
+        # Forzamos la lectura limpia
+        df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
+        
+        if df_p is not None and not df_p.empty:
+            # Limpiar nombres de columnas por si tienen espacios invisibles
+            df_p.columns = df_p.columns.str.strip()
+            
+            # Verificación de columnas críticas
+            columnas_necesarias = ['Estado', 'Monto', 'Gasto_Prod']
+            if all(col in df_p.columns for col in columnas_necesarias):
+                ventas = pd.to_numeric(df_p[df_p['Estado'] == 'Vendido']['Monto'], errors='coerce').sum()
+                gastos = pd.to_numeric(df_p['Gasto_Prod'], errors='coerce').sum()
                 
                 c1, c2, c3 = st.columns(3)
                 c1.metric("INGRESOS", f"${ventas:,.2f}")
                 c2.metric("GASTOS", f"${gastos:,.2f}")
                 c3.metric("NETO", f"${ventas - gastos:,.2f}")
-
-                st.divider()
-                for i, r in df_p.iterrows():
-                    lock = r['Estado'] == "Vendido"
-                    with st.expander(f"{'🔒' if lock else '⚙️'} {r['ID']} - {r['Cliente']}"):
-                        if lock:
-                            st.info("Registro bloqueado (Vendido).")
-                            st.json(r.to_dict())
-                        else:
-                            with st.form(f"f_{i}"):
-                                n_est = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                                n_mon = st.number_input("Precio $", value=float(r['Monto']))
-                                if st.form_submit_button("Actualizar"):
-                                    df_p.at[i, 'Estado'], df_p.at[i, 'Monto'] = n_est, n_mon
-                                    conn.update(spreadsheet=SHEET_ID, worksheet="Pedidos", data=df_p)
-                                    st.rerun()
-        except Exception as e:
-            st.error(f"Error de acceso: {e}. Revisa si la pestaña se llama 'Pedidos'")
+            else:
+                st.error(f"Faltan columnas en 'Pedidos'. Encontradas: {list(df_p.columns)}")
+                st.info("Asegúrate de tener: ID, Fecha, Cliente, Producto, Detalle, Monto, Estado, Gasto_Prod, Descripcion")
+        else:
+            st.warning("La hoja 'Pedidos' está vacía o no se pudo leer.")
+            
+    except Exception as e:
+        st.error(f"Error específico: {e}")
 
     # --- B. STOCK (ESTRUCTURA SOLICITADA) ---
     elif menu == "📦 STOCK":
