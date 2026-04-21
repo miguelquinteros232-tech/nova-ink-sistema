@@ -71,7 +71,7 @@ else:
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
     # --- A. DASHBOARD (BALANCE Y LÓGICA DE CIERRE) ---
-    f menu == "📊 DASHBOARD":
+    if menu == "📊 DASHBOARD":
     try:
         # Forzamos la lectura limpia
         df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
