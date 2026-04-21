@@ -7,15 +7,18 @@ from yaml.loader import SafeLoader
 import time
 from datetime import datetime
 
-# --- 1. CONFIGURACIÓN VISUAL NOVA INK ---
-st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
+# --- 1. CONFIGURACIÓN VISUAL (ESTILO CYBERPUNK) ---
+st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide", page_icon="🎨")
 
 URL_LOGO_REAL = "https://i.postimg.cc/85M9m9zV/nova-ink-logo.png" 
 
 st.markdown(f'''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        .stApp {{ background: #05000a; background-image: radial-gradient(circle at 15% 15%, rgba(188, 57, 253, 0.15) 0%, transparent 50%); }}
+        .stApp {{
+            background: #05000a;
+            background-image: radial-gradient(circle at 15% 15%, rgba(188, 57, 253, 0.15) 0%, transparent 50%);
+        }}
         .main-logo {{
             font-family: 'Orbitron'; font-size: clamp(35px, 9vw, 75px); text-align: center;
             background: linear-gradient(90deg, #bc39fd, #00d4ff, #bc39fd);
@@ -29,10 +32,11 @@ st.markdown(f'''
             background-size: contain; background-repeat: no-repeat;
             opacity: 0.08; pointer-events: none; z-index: 0;
         }}
+        .stMetric {{ background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border-left: 3px solid #bc39fd; }}
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. SEGURIDAD ---
+# --- 2. SEGURIDAD Y ACCESO ---
 def load_config():
     try:
         with open("config_pro.yaml") as f: return yaml.load(f, Loader=SafeLoader)
@@ -48,97 +52,156 @@ if not st.session_state.get("authentication_status"):
     with t2:
         if auth.register_user(location='main'):
             with open("config_pro.yaml", 'w') as f: yaml.dump(config, f)
-            st.success('Registrado.')
+            st.success('Usuario registrado.')
 else:
-    # --- 3. CONEXIÓN ---
+    # --- 3. CONEXIÓN A DATOS ---
     conn = st.connection("gsheets", type=GSheetsConnection)
     SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
 
     with st.sidebar:
-        st.write(f"👤 {st.session_state['name']}")
-        menu = st.radio("SISTEMA", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.write(f"👤 Operador: {st.session_state['name']}")
+        menu = st.radio("MENÚ PRINCIPAL", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.divider()
         auth.logout('Cerrar Sesión', 'sidebar')
 
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-    # --- A. DASHBOARD ---
+    # --- A. DASHBOARD (BALANCE Y GESTIÓN) ---
     if menu == "📊 DASHBOARD":
         try:
             df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
             if not df_p.empty:
-                # Asegurar que los números sean números
+                # Limpieza de datos numéricos
                 df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
                 df_p['Gasto_Prod'] = pd.to_numeric(df_p['Gasto_Prod'], errors='coerce').fillna(0)
                 
-                ventas = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
-                gastos = df_p['Gasto_Prod'].sum()
+                ventas_totales = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
+                gastos_totales = df_p['Gasto_Prod'].sum()
                 
                 c1, c2, c3 = st.columns(3)
-                c1.metric("INGRESOS", f"${ventas:,.2f}")
-                c2.metric("GASTOS", f"${gastos:,.2f}")
-                c3.metric("UTILIDAD", f"${ventas - gastos:,.2f}")
+                c1.metric("INGRESOS (Ventas)", f"${ventas_totales:,.2f}")
+                c2.metric("GASTOS (Producción)", f"${gastos_totales:,.2f}")
+                c3.metric("UTILIDAD NETA", f"${ventas_totales - gastos_totales:,.2f}")
 
                 st.divider()
+                st.subheader("📋 Gestión de Pedidos Activos")
+                
                 for i, r in df_p.iterrows():
-                    bloqueado = r['Estado'] == "Vendido"
-                    with st.expander(f"{'🔒' if bloqueado else '⚙️'} {r['ID']} - {r['Cliente']}"):
-                        if bloqueado:
-                            st.info("Venta Finalizada.")
+                    is_sold = r['Estado'] == "Vendido"
+                    label = f"{'🔒' if is_sold else '⚙️'} {r['ID']} | {r['Cliente']} - {r['Producto']}"
+                    
+                    with st.expander(label):
+                        if is_sold:
+                            st.warning("Este pedido ha sido finalizado y la edición está bloqueada.")
                             st.json(r.to_dict())
                         else:
-                            with st.form(f"f_{i}"):
-                                n_est = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                                n_mon = st.number_input("Precio $", value=float(r['Monto']))
-                                if st.form_submit_button("Actualizar"):
-                                    df_p.at[i, 'Estado'], df_p.at[i, 'Monto'] = n_est, n_mon
+                            with st.form(f"form_edit_{i}"):
+                                col_a, col_b = st.columns(2)
+                                nuevo_estado = col_a.selectbox("Estado", ["Producción", "Listo", "Vendido"], 
+                                                              index=["Producción", "Listo", "Vendido"].index(r['Estado']))
+                                nuevo_monto = col_b.number_input("Precio Final $", value=float(r['Monto']))
+                                nuevas_notas = st.text_area("Notas/Descripción", value=r.get('Descripcion', ''))
+                                
+                                if st.form_submit_button("Actualizar Pedido"):
+                                    df_p.at[i, 'Estado'] = nuevo_estado
+                                    df_p.at[i, 'Monto'] = nuevo_monto
+                                    df_p.at[i, 'Descripcion'] = nuevas_notas
                                     conn.update(spreadsheet=SHEET_ID, worksheet="Pedidos", data=df_p)
-                                    st.rerun()
+                                    st.success("Sincronizado con la nube"); time.sleep(1); st.rerun()
+            else:
+                st.info("No hay pedidos registrados en la base de datos.")
         except Exception as e:
-            st.error(f"Error: {e}. Verifica que la pestaña se llame 'Pedidos' y tenga encabezados.")
+            st.error(f"Error al cargar pedidos: {e}")
 
-    # --- B. STOCK ---
+    # --- B. STOCK (CONTROL DETALLADO) ---
     elif menu == "📦 STOCK":
         try:
             df_inv = conn.read(spreadsheet=SHEET_ID, worksheet="Inventario", ttl=0)
-            with st.form("add_inv"):
-                st.subheader("Cargar Material")
-                c1, c2 = st.columns(2)
-                cat, nom = c1.text_input("Categoría"), c1.text_input("Nombre")
-                tip, tal = c2.text_input("Tipo"), c2.text_input("Talle")
-                col, can = c1.text_input("Color"), c2.number_input("Cantidad", min_value=0.0)
-                uni = c2.text_input("Unidad")
-                if st.form_submit_button("Guardar"):
-                    nuevo = pd.DataFrame([{"Categoría": cat, "Nombre": nom, "Tipo Material": tip, "Talle/Medida": tal, "Color": col, "Cantidad": can, "Unidad": uni}])
-                    conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=pd.concat([df_inv, nuevo], ignore_index=True))
-                    st.rerun()
+            
+            with st.expander("➕ AGREGAR NUEVO MATERIAL AL INVENTARIO"):
+                with st.form("nuevo_material"):
+                    c1, c2 = st.columns(2)
+                    v_cat = c1.selectbox("Categoría", ["Telas", "Tazas", "Gorras", "Remeras", "Tintas", "Papel", "Otros"])
+                    v_nom = c1.text_input("Nombre del Producto")
+                    v_tip = c2.text_input("Tipo de Material")
+                    v_tal = c2.text_input("Talle o Medida")
+                    v_col = c1.text_input("Color")
+                    v_can = c2.number_input("Cantidad Inicial", min_value=0.0)
+                    v_uni = c2.text_input("Unidad (Un, Metros, Hojas)")
+                    
+                    if st.form_submit_button("Registrar en Stock"):
+                        nuevo_item = pd.DataFrame([{
+                            "Categoría": v_cat, "Nombre": v_nom, "Tipo Material": v_tip,
+                            "Talle/Medida": v_tal, "Color": v_col, "Cantidad": v_can, "Unidad": v_uni
+                        }])
+                        df_updated = pd.concat([df_inv, nuevo_item], ignore_index=True)
+                        conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=df_updated)
+                        st.success("Inventario actualizado"); time.sleep(1); st.rerun()
+            
+            st.subheader("📦 Inventario Actual")
             st.dataframe(df_inv, use_container_width=True)
-        except:
-            st.error("Error al cargar Inventario. Verifica la pestaña.")
+        except Exception as e:
+            st.error(f"Error en inventario: {e}")
 
-    # --- C. NUEVO PEDIDO ---
+    # --- C. NUEVO PEDIDO (CON DESCUENTO AUTOMÁTICO) ---
     elif menu == "📝 NUEVO PEDIDO":
-        df_inv = conn.read(spreadsheet=SHEET_ID, worksheet="Inventario", ttl=0)
-        with st.form("new_order"):
-            st.subheader("Registrar Orden")
-            cli, prd = st.text_input("Cliente"), st.text_input("Producto")
-            mon, gas = st.number_input("Precio $"), st.number_input("Gasto Materiales $")
-            mat = st.selectbox("Material usado", df_inv['Nombre'].tolist() if not df_inv.empty else [])
-            can_u = st.number_input("Cantidad usada", min_value=1.0)
-            det = st.text_area("Detalles")
-            if st.form_submit_button("REGISTRAR"):
-                # Restar stock
-                idx = df_inv[df_inv['Nombre'] == mat].index[0]
-                df_inv.at[idx, 'Cantidad'] -= can_u
-                conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=df_inv)
-                # Guardar pedido
-                df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
-                nuevo_p = pd.DataFrame([{"ID": len(df_p)+1, "Fecha": datetime.now().strftime("%d/%m/%Y"), "Cliente": cli, "Producto": prd, "Detalle": det, "Monto": mon, "Estado": "Producción", "Gasto_Prod": gas, "Descripcion": ""}])
-                conn.update(spreadsheet=SHEET_ID, worksheet="Pedidos", data=pd.concat([df_p, nuevo_p], ignore_index=True))
-                st.success("Hecho."); time.sleep(1); st.rerun()
+        try:
+            df_inv = conn.read(spreadsheet=SHEET_ID, worksheet="Inventario", ttl=0)
+            df_p = conn.read(spreadsheet=SHEET_ID, worksheet="Pedidos", ttl=0)
+            
+            with st.form("form_nuevo_pedido"):
+                st.subheader("Nueva Orden de Producción")
+                c1, c2 = st.columns(2)
+                p_cli = c1.text_input("Cliente")
+                p_prd = c2.text_input("Producto a realizar")
+                p_mon = c1.number_input("Monto a Cobrar $", min_value=0.0)
+                p_gas = c2.number_input("Costo de Materiales $ (Gasto)", min_value=0.0)
+                
+                st.divider()
+                st.write("🔧 Descontar Insumo")
+                p_mat = st.selectbox("Seleccionar Material del Stock", df_inv['Nombre'].tolist() if not df_inv.empty else ["Sin Stock"])
+                p_can = st.number_input("Cantidad a usar", min_value=0.1)
+                p_det = st.text_area("Detalles del Diseño (Talle, Color, Fecha entrega)")
+
+                if st.form_submit_button("REGISTRAR PEDIDO Y DESCONTAR STOCK"):
+                    if not df_inv.empty and p_mat != "Sin Stock":
+                        # 1. Restar del Stock
+                        idx = df_inv[df_inv['Nombre'] == p_mat].index[0]
+                        df_inv.at[idx, 'Cantidad'] -= p_can
+                        conn.update(spreadsheet=SHEET_ID, worksheet="Inventario", data=df_inv)
+                        
+                        # 2. Crear el Pedido
+                        nuevo_p = pd.DataFrame([{
+                            "ID": len(df_p) + 1,
+                            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "Cliente": p_cli,
+                            "Producto": p_prd,
+                            "Detalle": p_det,
+                            "Monto": p_mon,
+                            "Estado": "Producción",
+                            "Gasto_Prod": p_gas,
+                            "Descripcion": ""
+                        }])
+                        conn.update(spreadsheet=SHEET_ID, worksheet="Pedidos", data=pd.concat([df_p, nuevo_p], ignore_index=True))
+                        st.success("✅ Pedido creado y Stock actualizado."); time.sleep(1); st.rerun()
+                    else:
+                        st.error("No se puede descontar stock. Revisa el inventario.")
+        except Exception as e:
+            st.error(f"Fallo al crear pedido: {e}")
 
     # --- D. COTIZADOR ---
     elif menu == "💰 COTIZADOR":
-        st.subheader("💰 Calculadora")
-        costo = st.number_input("Inversión $")
-        margen = st.slider("% Ganancia", 0, 500, 100)
-        st.title(f"Sugerido: ${costo * (1 + margen/100):,.2f}")
+        st.subheader("💰 Calculadora de Precios Sugeridos")
+        with st.container():
+            c_costo = st.number_input("Inversión total en materiales $", min_value=0.0)
+            c_margen = st.slider("% de Ganancia deseada", 0, 500, 100)
+            
+            sugerido = c_costo * (1 + c_margen/100)
+            
+            st.markdown(f"""
+            <div style="background: rgba(188, 57, 253, 0.2); padding: 20px; border-radius: 15px; border: 1px solid #bc39fd; text-align: center;">
+                <h2 style="color: white; margin: 0;">PRECIO SUGERIDO</h2>
+                <h1 style="color: #00d4ff; font-size: 60px; margin: 10px 0;">${sugerido:,.2f}</h1>
+                <p style="color: #ccc;">Usa el valor de 'Inversión' como 'Gasto Prod' al cargar el pedido.</p>
+            </div>
+            """, unsafe_allow_html=True)
