@@ -14,90 +14,92 @@ st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 st.markdown('''
     <style>
-        /* 1. CONFIGURACIÓN GLOBAL */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        /* 1. FUENTES Y FONDO DE LUJO */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Inter:wght@400;700&display=swap');
 
         .stApp {
-            background-color: #ffffff !important;
-            color: #1d1d1f !important;
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%) !important;
+            color: #f1f5f9 !important;
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* 2. LOGO NOVA INK. */
+        /* 2. LOGO ESTILO AGENCIA */
         .main-logo { 
-            font-family: 'Inter', sans-serif; 
-            font-size: 48px; text-align: center; 
-            color: #1d1d1f; font-weight: 600; 
-            letter-spacing: -2px; margin-bottom: 30px;
+            font-family: 'Outfit', sans-serif; 
+            font-size: 50px; text-align: center; 
+            color: #ffffff; font-weight: 600; 
+            letter-spacing: 4px; margin-bottom: 40px;
+            text-transform: uppercase;
+            text-shadow: 0px 4px 10px rgba(0,0,0,0.5);
         }
-        .main-logo::after { content: "."; color: #0071e3; }
+        .main-logo::after { content: "™"; font-size: 15px; vertical-align: top; color: #38bdf8; }
 
-        /* 3. SIDEBAR (CORRECCIÓN DE VISIBILIDAD) */
-        [data-testid="stSidebar"] {
-            background-color: #f5f5f7 !important;
-            border-right: 1px solid #e5e5e7 !important;
+        /* 3. TARJETAS DE CRISTAL (Métricas) */
+        div[data-testid="metric-container"] {
+            background: rgba(255, 255, 255, 0.03) !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 16px !important;
+            padding: 25px !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
         }
         
-        /* Texto del menú lateral en negro para que se vea */
-        [data-testid="stSidebar"] .stRadio label, 
-        [data-testid="stSidebar"] p, 
-        [data-testid="stSidebar"] h1 {
-            color: #1d1d1f !important;
-            font-weight: 500 !important;
+        [data-testid="stMetricValue"] > div { 
+            color: #38bdf8 !important; 
+            font-size: 32px !important; 
+            font-weight: 700 !important;
         }
 
-        /* 4. INPUTS Y CAMPOS (Estilo Apple) */
-        /* Forzamos que los bordes sean grises suaves y el fondo blanco */
-        input, textarea, select, div[data-baseweb="select"] > div {
-            background-color: #ffffff !important;
-            color: #1d1d1f !important;
-            border: 1px solid #d2d2d7 !important;
-            border-radius: 10px !important;
-            font-size: 14px !important;
-        }
-
-        /* Cuando haces clic en un campo */
-        input:focus, textarea:focus {
-            border-color: #0071e3 !important;
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1) !important;
-        }
-
-        /* 5. TABS (NUEVO PEDIDO / MODIFICAR) */
-        button[data-baseweb="tab"] {
-            color: #86868b !important;
-            font-size: 14px !important;
-            border: none !important;
-        }
-        button[data-baseweb="tab"][aria-selected="true"] {
-            color: #0071e3 !important;
-            border-bottom: 2px solid #0071e3 !important;
-        }
-
-        /* 6. BOTÓN CERRAR SESIÓN Y OTROS */
+        /* 4. BOTONES: ACABADO METÁLICO E ILUMINACIÓN */
         div.stButton > button {
-            background-color: #1d1d1f !important;
-            color: #ffffff !important;
-            border: none !important;
-            border-radius: 8px !important;
-            padding: 8px 16px !important;
-            font-weight: 400 !important;
-            transition: 0.2s;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+            color: #f1f5f9 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            padding: 12px 24px !important;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease !important;
         }
 
         div.stButton > button:hover {
-            background-color: #0071e3 !important;
-            box-shadow: 0px 4px 10px rgba(0, 113, 227, 0.3) !important;
+            border-color: #38bdf8 !important;
+            box-shadow: 0px 0px 20px rgba(56, 189, 248, 0.4) !important;
+            transform: translateY(-2px);
+            color: #38bdf8 !important;
         }
 
-        /* 7. MÉTRICAS */
-        div[data-testid="metric-container"] {
-            background: #ffffff !important;
-            border: 1px solid #e5e5e7 !important;
+        /* 5. FORMULARIOS E INPUTS PROFESIONALES */
+        input, textarea, select {
+            background-color: rgba(15, 23, 42, 0.8) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 10px !important;
+            padding: 12px !important;
+        }
+
+        input:focus {
+            border-color: #38bdf8 !important;
+            background-color: #0f172a !important;
+        }
+
+        /* 6. SIDEBAR (Elegancia Nocturna) */
+        [data-testid="stSidebar"] {
+            background-color: #020617 !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        /* 7. EXPANDERS (Bordes de precisión) */
+        div[data-testid="stExpander"] {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 12px !important;
-            box-shadow: 0px 2px 8px rgba(0,0,0,0.02) !important;
         }
     </style>
 ''', unsafe_allow_html=True)
+
 # --- 2. CONFIGURACIÓN DE USUARIOS ---
 def load_config():
     file_path = "config_pro.yaml"
