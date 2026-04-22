@@ -90,12 +90,12 @@ elif st.session_state["authentication_status"]:
         ws_p = sh.worksheet("Pedidos"); ws_i = sh.worksheet("Inventario")
 
         with st.sidebar:
-    # Este bloque ahora está correctamente indentado
+    # LOGO NOVA INK CON EFECTO NEÓN (Línea 94 corregida)
     st.write(f'''
-        <div style="text-align: center; padding: 20px 0; margin-bottom: 20px;">
+        <div style="text-align: center; padding: 20px 0; margin-bottom: 10px;">
             <h1 style="
                 font-family: 'Orbitron', sans-serif; 
-                font-size: 38px; 
+                font-size: 35px; 
                 font-weight: 700;
                 color: #FFFFFF !important; 
                 text-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff;
@@ -106,9 +106,14 @@ elif st.session_state["authentication_status"]:
         </div>
     ''', unsafe_allow_html=True)
     
-    # Aquí sigue tu radio button (asegúrate de que también tenga 4 espacios de sangría)
-    menu = st.radio("MENÚ", ["📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"], label_visibility="collapsed")
-    
+    # Menú Único (Asegúrate de que este sea el único st.radio de tu app)
+    menu = st.radio("", [
+        "📊 DASHBOARD", 
+        "🛍️ PEDIDOS", 
+        "📦 STOCK", 
+        "📜 HISTORIAL", 
+        "💰 COTIZADOR"
+    ], key="nav_nova_ink")
 
         # SECCIÓN DASHBOARD (Tus métricas pero con estilo de la imagen)
         if "DASHBOARD" in menu:
