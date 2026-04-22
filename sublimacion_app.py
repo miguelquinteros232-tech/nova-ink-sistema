@@ -14,25 +14,24 @@ st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* Fondo General */
-        .stApp { background-color: #000000 !important; }
+        /* RESET PARA FONDO NEGRO PURO */
+        .main, .stApp, [data-testid="stHeader"] {
+            background-color: #000000 !important;
+        }
         
-        /* Sidebar Estilo Captura 3 */
-        [data-testid="stSidebar"] { 
-            background-color: #050505 !important; 
-            border-right: 1px solid #1a1a1a !important; 
+        /* SIDEBAR ESTILO CAPTURA 3 */
+        [data-testid="stSidebar"] {
+            background-color: #050505 !important;
+            border-right: 1px solid #1a1a1a !important;
+            min-width: 300px !important;
         }
 
-        /* Logo Nova Ink */
-        .logo-container { text-align: center; margin: 20px 0; }
-        .logo-text {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 45px; color: white !important;
-            letter-spacing: 3px; text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        /* TEXTOS FORZADOS A BLANCO */
+        .stMarkdown, p, label, h1, h2, h3, span {
+            color: #ffffff !important;
         }
-        .logo-text span { color: #00d4ff !important; }
 
-        /* Items del Menú (Botones con Brillo) */
+        /* DISEÑO DE LOS ITEMS DEL MENÚ (COMO EN LA IMAGEN) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #222 !important;
@@ -44,29 +43,35 @@ st.markdown('''
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
-            transform: translateX(5px);
+            transform: translateX(10px);
         }
         div[role="radiogroup"] label p {
-            color: #888 !important; font-weight: 700 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
+            color: #888 !important;
         }
-        div[role="radiogroup"] label:hover p { color: #ffffff !important; }
+        div[role="radiogroup"] label:hover p { color: #00d4ff !important; }
 
-        /* Tarjetas de Dashboard (Balances) */
-        .metric-card {
+        /* LOGO NOVA INK */
+        .logo-nav {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 40px; text-align: center; margin-bottom: 30px;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+        .logo-nav span { color: #00d4ff; }
+
+        /* TARJETAS DE DASHBOARD (Asegúrate de usar estas clases en tu lógica) */
+        .metric-container {
             background: linear-gradient(145deg, #111, #050505);
             border: 1px solid #222;
-            padding: 25px;
+            padding: 30px;
             border-radius: 15px;
             text-align: center;
         }
-        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 35px; color: white !important; }
-
-        /* Forzar visibilidad de textos de Streamlit */
-        .stMarkdown, p, label, h1, h2, h3 { color: white !important; }
+        .metric-title { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 40px; color: white; }
     </style>
 ''', unsafe_allow_html=True)
-
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
