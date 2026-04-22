@@ -9,73 +9,113 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. CONFIGURACIÓN VISUAL: THE FLUX (FUERZA MÁXIMA) ---
-st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
-
-# --- 1. OVERRIDE TOTAL DE ESTILO: NOVA INK ELITE ---
+# 1. FORZAR EL TEMA OSCURO DE FONDO
 st.markdown('''
     <style>
-        /* 1. RESET Y FONDO (Forzar Negro Carbón) */
-        .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-            background-color: #121212 !important;
+        .stApp {
+            background-color: #1a1a1a !important;
         }
+        /* Ocultar elementos innecesarios de Streamlit que ensucian el diseño */
+        #MainMenu, footer, header {visibility: hidden;}
+    </style>
+''', unsafe_allow_html=True)
 
-        /* 2. LOGO "NOVA INK." CON PUNTO AZUL */
-        /* Buscamos el elemento donde pones el título */
-        .main-logo {
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 800 !important;
-            font-size: 50px !important;
-            color: white !important;
+# 2. EL LOGO "NOVA INK." CON EFECTOS VISUALES (Réplica Ejemplo 3)
+st.markdown('''
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+        
+        .logo-container {
             text-align: center;
+            padding: 40px 0;
+            background: #1a1a1a;
+        }
+        
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 60px;
+            color: white;
             letter-spacing: -2px;
-            margin-bottom: 30px;
+            position: relative;
+            display: inline-block;
+            /* Efecto de resplandor suave detrás del texto */
+            text-shadow: 0 0 20px rgba(188, 57, 253, 0.2), 0 0 40px rgba(0, 212, 255, 0.1);
+            animation: breath 4s infinite ease-in-out;
         }
-        .main-logo span { color: #00acc1 !important; } /* Para el punto azul */
+        
+        .logo-text span {
+            color: #00d4ff; /* El punto azul cian */
+            text-shadow: 0 0 15px #00d4ff;
+        }
 
-        /* 3. SIDEBAR (MENÚ LATERAL) */
+        @keyframes breath {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.02); opacity: 1; text-shadow: 0 0 30px rgba(188, 57, 253, 0.4); }
+        }
+    </style>
+    <div class="logo-container">
+        <div class="logo-text">NOVA INK<span>.</span></div>
+    </div>
+''', unsafe_allow_html=True)
+
+# 3. INTERFAZ REACTIVA PARA LAS OPCIONES (SIDEBAR)
+st.markdown('''
+    <style>
+        /* Estilo para que las opciones del menú se iluminen como en la imagen */
         [data-testid="stSidebar"] {
-            background-color: #0f0f0f !important;
-            border-right: 1px solid rgba(255,255,255,0.1) !important;
+            background-color: #151515 !important;
+            border-right: 1px solid #333 !important;
         }
-
-        /* 4. REGLA DE ORO: ILUMINACIÓN EN TODO EL SISTEMA */
-        /* Seleccionamos botones, tarjetas, inputs y opciones de menú */
-        div[data-testid="metric-container"], 
-        .stButton button, 
-        [data-testid="stExpander"],
+        
+        /* Forzar que cada opción del radio button sea un bloque de luz */
         div[role="radiogroup"] label {
-            background-color: #1e1e1e !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            transition: all 0.3s ease !important;
-        }
-
-        /* EFECTO HOVER (El brillo que buscabas) */
-        div[data-testid="metric-container"]:hover, 
-        .stButton button:hover, 
-        [data-testid="stExpander"]:hover,
-        div[role="radiogroup"] label:hover {
-            border-color: #00acc1 !important;
-            box-shadow: 0px 0px 15px rgba(0, 172, 193, 0.4) !important;
-            background-color: rgba(0, 172, 193, 0.05) !important;
-        }
-
-        /* 5. TABLAS (STOCK E HISTORIAL) */
-        [data-testid="stDataFrame"] {
-            border: 1px solid rgba(255,255,255,0.1) !important;
+            background: #222 !important;
+            border: 1px solid #333 !important;
+            margin-bottom: 8px !important;
             border-radius: 8px !important;
+            padding: 12px !important;
+            transition: 0.3s !important;
         }
-
-        /* 6. CORRECCIÓN DE TEXTO EN EL MENÚ */
-        [data-testid="stSidebar"] .stRadio label p {
-            color: #aaaaaa !important;
-            font-weight: 500 !important;
+        
+        div[role="radiogroup"] label:hover {
+            border-color: #00d4ff !important;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3) !important;
+            background: #282828 !important;
         }
-        [data-testid="stSidebar"] .stRadio label:hover p {
-            color: white !important;
+        
+        /* Color del texto del menú */
+        div[role="radiogroup"] label p {
+            color: #ccc !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
         }
     </style>
 ''', unsafe_allow_html=True)
+
+# 4. TARJETAS DEL DASHBOARD (El estilo de cuadros de la imagen)
+def metric_card(title, value):
+    st.markdown(f'''
+        <div style="
+            background: #252525;
+            border: 1px solid #333;
+            padding: 25px;
+            border-radius: 15px;
+            transition: 0.3s;
+            cursor: pointer;
+            margin-bottom: 20px;
+        " onmouseover="this.style.borderColor='#00d4ff'; this.style.boxShadow='0 0 20px rgba(0,212,255,0.2)';" 
+           onmouseout="this.style.borderColor='#333'; this.style.boxShadow='none';">
+            <p style="color: #888; font-size: 12px; margin: 0; font-family: sans-serif;">{title}</p>
+            <h2 style="color: white; margin: 5px 0 0 0; font-family: 'Orbitron', sans-serif;">{value}</h2>
+        </div>
+    ''', unsafe_allow_html=True)
+
+# Ejemplo de uso en el Dashboard
+col1, col2 = st.columns(2)
+with col1:
+    metric_card("PEDIDOS ACTIVOS", "15")
+with col2:
+    metric_card("POR COBRAR", "$2,500.00")
 
 # --- 2. CÓMO ESCRIBIR EL LOGO PARA QUE FUNCIONE EL CSS ---
 st.markdown('<h1 class="main-logo">NOVA INK<span>.</span></h1>', unsafe_allow_html=True)
