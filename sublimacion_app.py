@@ -14,102 +14,96 @@ st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 st.markdown('''
     <style>
-        /* 1. FONDO DINÁMICO (No más fondo apagado) */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Poppins:wght@300;600&display=swap');
+        /* 1. FUENTES Y REFRESCO TOTAL */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-        .stApp {
-            background: radial-gradient(circle at top center, #0a0015 0%, #05000a 100%) !important;
-            background-attachment: fixed;
+        html, body, [data-testid="stAppViewContainer"] {
+            background-color: #fcfcfc !important; /* Blanco hueso muy suave */
+            color: #1d1d1f !important; /* Negro Apple */
+            font-family: 'Inter', sans-serif !important;
         }
 
-        /* 2. EFECTO DE LUZ DE FONDO (Sutil resplandor púrpura en las esquinas) */
-        .stApp::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 10% 10%, rgba(188, 57, 253, 0.05) 0%, transparent 50%),
-                        radial-gradient(circle at 90% 90%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        /* 3. LOGO CON GLOW INTENSO */
+        /* 2. LOGO MINIMALISTA */
         .main-logo { 
-            font-family: 'Orbitron', sans-serif; 
-            font-size: 65px; text-align: center; 
-            background: linear-gradient(90deg, #00d4ff, #bc39fd, #00d4ff); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            font-weight: 900;
-            filter: drop-shadow(0px 0px 15px rgba(188, 57, 253, 0.8));
-            animation: pulse 4s infinite;
+            font-family: 'Inter', sans-serif; 
+            font-size: 40px; text-align: center; 
+            color: #1d1d1f;
+            font-weight: 600; 
+            letter-spacing: -1px; 
+            margin-bottom: 40px;
+            text-transform: lowercase; /* Estilo tech minimal */
         }
+        .main-logo::after { content: "."; color: #0071e3; } /* Punto azul de acento */
 
-        @keyframes pulse {
-            0% { filter: drop-shadow(0px 0px 10px rgba(0, 212, 255, 0.4)); }
-            50% { filter: drop-shadow(0px 0px 20px rgba(188, 57, 253, 0.7)); }
-            100% { filter: drop-shadow(0px 0px 10px rgba(0, 212, 255, 0.4)); }
-        }
-
-        /* 4. ILUMINACIÓN TOTAL DE BOTONES (Hover Effect) */
-        /* Esto afecta a todos los botones del sistema */
-        button {
-            border: 1px solid #bc39fd !important;
-            background: rgba(188, 57, 253, 0.05) !important;
-            color: white !important;
-            transition: all 0.4s ease !important;
-            box-shadow: 0 0 0px transparent !important;
-        }
-
-        button:hover {
-            background: #bc39fd !important;
-            color: black !important;
-            box-shadow: 0px 0px 25px #bc39fd, 0px 0px 50px rgba(188, 57, 253, 0.4) !important;
-            transform: scale(1.02);
-            border: 1px solid white !important;
-        }
-
-        /* 5. TARJETAS Y MÉTRICAS CON "BORDE DE TINTA" */
+        /* 3. MÉTRICAS (Estilo Tarjeta de Estudio) */
         div[data-testid="metric-container"] {
-            background: rgba(0, 0, 0, 0.4) !important;
-            border-left: 5px solid #00d4ff !important;
-            border-right: 1px solid rgba(0, 212, 255, 0.2) !important;
-            border-top: 1px solid rgba(0, 212, 255, 0.2) !important;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.2) !important;
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5) !important;
-            border-radius: 10px !important;
-            padding: 15px !important;
-        }
-
-        div[data-testid="metric-container"]:hover {
-            border-left: 5px solid #bc39fd !important;
-            box-shadow: 0px 0px 20px rgba(188, 57, 253, 0.3) !important;
-        }
-
-        /* 6. INPUTS Y SELECTORES (Campos de texto) */
-        .stTextInput input, .stSelectbox div, .stNumberInput input, .stTextArea textarea {
-            background-color: #100020 !important;
-            color: #00d4ff !important;
-            border: 1px solid rgba(0, 212, 255, 0.3) !important;
-            border-radius: 8px !important;
-        }
-
-        .stTextInput input:focus, .stTextArea textarea:focus {
-            border-color: #bc39fd !important;
-            box-shadow: 0px 0px 15px rgba(188, 57, 253, 0.5) !important;
-        }
-
-        /* 7. SIDEBAR (MENÚ) */
-        [data-testid="stSidebar"] {
-            border-right: 1px solid rgba(188, 57, 253, 0.2) !important;
+            background: white !important;
+            border: 1px solid #e5e5e7 !important;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.03) !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+            transition: all 0.3s ease !important;
         }
         
-        /* 8. TABLAS (DATA INTERFACE) */
+        div[data-testid="metric-container"]:hover {
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.08) !important;
+            transform: translateY(-2px);
+        }
+
+        [data-testid="stMetricValue"] > div { color: #1d1d1f !important; font-weight: 600 !important; }
+
+        /* 4. BOTONES (Elegancia pura) */
+        div.stButton > button {
+            background-color: #1d1d1f !important; /* Negro sólido */
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 10px 24px !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        div.stButton > button:hover {
+            background-color: #0071e3 !important; /* Azul eléctrico al pasar el mouse */
+            box-shadow: 0px 4px 12px rgba(0, 113, 227, 0.3) !important;
+        }
+
+        /* 5. SIDEBAR (Limpio y claro) */
+        [data-testid="stSidebar"] {
+            background-color: #f5f5f7 !important; /* Gris claro de sistema */
+            border-right: 1px solid #e5e5e7 !important;
+        }
+
+        /* 6. INPUTS Y FORMULARIOS */
+        input, textarea, select {
+            background-color: white !important;
+            color: #1d1d1f !important;
+            border: 1px solid #d2d2d7 !important;
+            border-radius: 8px !important;
+            padding: 10px !important;
+        }
+
+        input:focus {
+            border-color: #0071e3 !important;
+            outline: none !important;
+        }
+
+        /* 7. EXPANDERS (Diseño plano) */
+        div[data-testid="stExpander"] {
+            background-color: white !important;
+            border: 1px solid #e5e5e7 !important;
+            border-radius: 12px !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* 8. TABLAS */
         .stDataFrame {
-            border: 1px solid rgba(0, 212, 255, 0.2) !important;
-            border-radius: 10px !important;
+            border: 1px solid #e5e5e7 !important;
+            border-radius: 12px !important;
         }
     </style>
 ''', unsafe_allow_html=True)
-
 # --- 2. CONFIGURACIÓN DE USUARIOS ---
 def load_config():
     file_path = "config_pro.yaml"
