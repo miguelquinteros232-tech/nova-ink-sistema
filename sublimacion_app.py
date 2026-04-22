@@ -9,111 +9,114 @@ import time
 from datetime import datetime
 import os
 
-# ==========================================
-# 1. ESTILO VISUAL "IMAGEN 3" (NO TOCAR)
-# ==========================================
+# --- 1. CAPA VISUAL DEFINITIVA (ESTILO CAPTURA 3) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* Fondo y Sidebar */
+        /* FONDO NEGRO PURO */
         .stApp { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
+        [data-testid="stSidebar"] { 
+            background-color: #050505 !important; 
+            border-right: 1px solid #1a1a1a !important; 
+        }
         
-        /* Logo Central */
-        .logo-container { text-align: center; padding: 20px 0; }
+        /* LOGO NOVA INK CON NEÓN */
+        .logo-container { text-align: center; margin: 35px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 50px; color: white !important; font-weight: 700;
-            letter-spacing: 3px; text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+            font-size: 52px; color: white !important; font-weight: 700;
+            letter-spacing: 4px; text-shadow: 0 0 25px rgba(0, 212, 255, 0.7);
         }
         .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
 
-        /* Menú con Luz Lateral (Efecto Imagen 3) */
+        /* NAVEGADOR CON ICONOS Y BRILLO LATERAL */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #222 !important;
-            padding: 15px 20px !important;
+            padding: 18px 22px !important;
             border-radius: 12px !important;
-            margin-bottom: 10px !important;
-            transition: 0.3s all ease !important;
+            margin-bottom: 12px !important;
+            transition: 0.3s all ease-in-out !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4) !important;
             transform: translateX(10px);
         }
         div[role="radiogroup"] label p {
             font-family: 'Inter', sans-serif !important;
-            font-weight: 700 !important; color: #888 !important;
+            font-weight: 700 !important; color: #777 !important;
+            font-size: 14px !important;
         }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* Tarjetas Dashboard */
+        /* DASHBOARD: TARJETAS DE BALANCES */
         .metric-card {
-            background: linear-gradient(145deg, #111, #050505);
+            background: linear-gradient(145deg, #111111, #050505);
             border: 1px solid #252525;
-            padding: 35px;
+            padding: 45px 25px;
             border-radius: 20px;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; color: white !important; }
+        .metric-label { color: #555; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 700; color: white !important; margin-top: 10px; }
         
-        /* Visibilidad de tablas e inputs */
-        .stMarkdown, p, label { color: white !important; }
-        .stDataFrame, [data-testid="stTable"] { background-color: #050505 !important; border: 1px solid #222; }
+        /* VISIBILIDAD DE COMPONENTES */
+        .stMarkdown, p, label, h1, h2, h3 { color: white !important; }
+        .stButton button { 
+            background: transparent !important; color: #00d4ff !important; 
+            border: 1px solid #00d4ff !important; border-radius: 10px !important; 
+        }
     </style>
 ''', unsafe_allow_html=True)
 
-# ==========================================
-# 2. LOGUEO Y NAVEGACIÓN (CON ICONOS)
-# ==========================================
+# --- 2. VALIDACIÓN DE SESIÓN Y MENÚ CON ICONOS ---
+# (Asumiendo que 'authenticator' ya fue definido arriba)
 if st.session_state.get("authentication_status"):
     with st.sidebar:
-        st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height: 25px;"></div>', unsafe_allow_html=True)
         
-        # NAVEGADOR CON ICONOS IDENTIFICADORES
+        # MENÚ CON ITEMS IDENTIFICADORES (PERSONALIDAD)
         menu = st.radio("", [
             "📊 DASHBOARD", 
-            "🛍️ PEDIDOS", 
-            "📦 STOCK", 
-            "📜 HISTORIAL", 
+            "🛒 GESTIÓN PEDIDOS", 
+            "📦 INVENTARIO", 
+            "📋 HISTORIAL", 
             "💰 COTIZADOR"
         ])
         
         st.write("---")
-        # Aquí ya no dará NameError porque estamos dentro del bloque de autenticación
-        authenticator.logout('Cerrar Sesión', 'sidebar')
+        # El logout solo se llama si existe la sesión para evitar NameError
+        try:
+            authenticator.logout('Cerrar Sesión', 'sidebar')
+        except:
+            pass
 
-    # ==========================================
-    # 3. DASHBOARD Y BALANCES (RESTAURADO)
-    # ==========================================
+    # --- 3. CONTENIDO DEL DASHBOARD (RESTAURADO) ---
     if "DASHBOARD" in menu:
         st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
         
+        # Forzamos la obtención de datos para las métricas
         try:
-            # Tu lógica de Google Sheets
             df_p = pd.DataFrame(ws_p.get_all_records())
             df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
             df_act = df_p[df_p['Estado'] != 'Vendido']
 
-            c1, c2 = st.columns(2)
-            with c1:
+            col1, col2 = st.columns(2)
+            with col1:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">PEDIDOS ACTIVOS</div>
                     <div class="metric-value">{len(df_act)}</div>
                 </div>''', unsafe_allow_html=True)
-            with c2:
+            with col2:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">BALANCE PENDIENTE</div>
                     <div class="metric-value" style="color:#00d4ff;">${df_act['Monto'].sum():,.0f}</div>
                 </div>''', unsafe_allow_html=True)
-        except:
-            st.warning("Conectando con la base de datos...")
-
-    # AQUÍ CONTINÚA TU LÓGICA DE GESTIÓN, STOCK, ETC.
+        except Exception as e:
+            st.info("Sincronizando datos con la nube...")
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
