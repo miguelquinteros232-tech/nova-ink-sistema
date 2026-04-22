@@ -21,7 +21,7 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. FUNCIONES DE CARGA ---
+# --- 2. CARGA DE CONFIGURACIÓN ---
 def load_config():
     if not os.path.exists("config_pro.yaml"):
         initial_config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_auth'}}
@@ -31,8 +31,10 @@ def load_config():
     with open("config_pro.yaml") as f:
         return yaml.load(f, Loader=SafeLoader)
 
-# --- 3. AUTENTICACIÓN ---
 config = load_config()
+
+# --- 3. SISTEMA DE AUTENTICACIÓN ---
+# Nota: La ubicación 'main' a veces falla en Tabs, usaremos la configuración estándar.
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -40,31 +42,36 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# Forzar la aparición del login si no está autenticado
+# Renderizado de Interfaz Inicial
+st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
+
+# Si NO está autenticado, mostramos LOGIN/REGISTRO
 if st.session_state.get("authentication_status") is not True:
-    st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
     tab_login, tab_reg = st.tabs(["🔐 ACCESO", "📝 REGISTRO"])
     
     with tab_login:
-        # Capturamos el retorno para asegurar que Streamlit refresque el widget
-        authenticator.login(location='main')
+        # IMPORTANTE: En versiones nuevas, login() devuelve 3 valores.
+        # Quitamos 'location' para que use el comportamiento por defecto que es más estable.
+        authenticator.login()
         
         if st.session_state["authentication_status"] is False:
             st.error('Usuario o contraseña incorrectos')
         elif st.session_state["authentication_status"] is None:
-            st.info('Por favor, ingresa tus credenciales para continuar')
+            st.info('Ingresa tus datos para entrar al sistema.')
             
     with tab_reg:
         try:
+            # Registro simple sin pre-autorización
             if authenticator.register_user(location='main'):
                 with open("config_pro.yaml", 'w') as f:
                     yaml.dump(config, f, default_flow_style=False)
-                st.success('¡Registro exitoso! Ya puedes iniciar sesión en la otra pestaña.')
+                st.success('¡Registro exitoso! Por favor, ve a la pestaña ACCESO e inicia sesión.')
         except Exception as e:
             st.error(f"Error al registrar: {e}")
 
-# --- 4. APLICACIÓN PRINCIPAL (SOLO SI EL STATUS ES TRUE) ---
-elif st.session_state["authentication_status"]:
+# --- 4. APLICACIÓN PRINCIPAL (SOLO SI EL LOGIN FUE EXITOSO) ---
+else:
+    # Todo el código de la App va dentro de este bloque
     
     @st.cache_resource
     def get_gspread_client():
@@ -76,7 +83,7 @@ elif st.session_state["authentication_status"]:
             credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
             return gspread.authorize(credentials)
         except Exception as e:
-            st.error(f"Error en credenciales: {e}")
+            st.error(f"Error de credenciales: {e}")
             st.stop()
 
     try:
@@ -86,51 +93,47 @@ elif st.session_state["authentication_status"]:
         ws_p = sh.worksheet("Pedidos")
         ws_i = sh.worksheet("Inventario")
     except Exception as e:
-        st.error(f"Error de conexión: {e}")
-        if "Permission" in str(e):
-            st.info(f"Comparte el Excel con: {st.secrets['connections']['gsheets']['client_email']}")
+        st.error(f"Error de conexión con Google: {e}")
         st.stop()
 
+    # Sidebar de Navegación
     with st.sidebar:
-        st.markdown(f"### 👤 {st.session_state['name']}")
-        menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.write(f"👤 Bienvenido, {st.session_state['name']}")
+        menu = st.radio("SISTEMA", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
         st.divider()
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
-
-    # --- DASHBOARD ---
+    # --- CONTENIDO DE LOS MENÚS ---
     if menu == "📊 DASHBOARD":
         df_p = pd.DataFrame(ws_p.get_all_records())
         if not df_p.empty:
             df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
             df_p['Gasto_Prod'] = pd.to_numeric(df_p['Gasto_Prod'], errors='coerce').fillna(0)
-            ventas = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
-            gastos = df_p['Gasto_Prod'].sum()
+            ing = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
+            gst = df_p['Gasto_Prod'].sum()
             
             c1, c2, c3 = st.columns(3)
-            c1.metric("VENTAS", f"${ventas:,.2f}")
-            c2.metric("GASTOS", f"${gastos:,.2f}")
-            c3.metric("UTILIDAD", f"${ventas - gastos:,.2f}")
+            c1.metric("VENTAS", f"${ing:,.2f}")
+            c2.metric("COSTOS", f"${gst:,.2f}")
+            c3.metric("UTILIDAD", f"${ing - gst:,.2f}")
 
             for i, r in df_p.iterrows():
-                bloqueado = r['Estado'] == "Vendido"
-                with st.expander(f"{'🔒' if bloqueado else '⚙️'} {r['ID']} - {r['Cliente']}"):
-                    if bloqueado: st.info("Registro cerrado.")
+                es_v = r['Estado'] == "Vendido"
+                with st.expander(f"{'🔒' if es_v else '⚙️'} {r['ID']} - {r['Cliente']}"):
+                    if es_v: st.info("Finalizado.")
                     else:
-                        with st.form(f"e_{i}"):
+                        with st.form(f"f_{i}"):
                             n_est = st.selectbox("Estado", ["Producción", "Listo", "Vendido"], index=["Producción", "Listo", "Vendido"].index(r['Estado']))
-                            n_mon = st.number_input("Precio $", value=float(r['Monto']))
+                            n_mon = st.number_input("Monto $", value=float(r['Monto']))
                             if st.form_submit_button("Actualizar"):
                                 ws_p.update_cell(i+2, 7, n_est)
                                 ws_p.update_cell(i+2, 6, n_mon)
                                 st.rerun()
 
-    # --- STOCK ---
     elif menu == "📦 STOCK":
         df_inv = pd.DataFrame(ws_i.get_all_records())
-        with st.expander("➕ AGREGAR MATERIAL"):
-            with st.form("add_stock"):
+        with st.expander("➕ AGREGAR"):
+            with st.form("add"):
                 c1, c2 = st.columns(2)
                 cat, nom = c1.text_input("Categoría"), c1.text_input("Nombre")
                 tip, tal = c2.text_input("Tipo"), c2.text_input("Talle")
@@ -141,26 +144,22 @@ elif st.session_state["authentication_status"]:
                     st.rerun()
         st.dataframe(df_inv, use_container_width=True)
 
-    # --- NUEVO PEDIDO ---
     elif menu == "📝 NUEVO PEDIDO":
         df_inv = pd.DataFrame(ws_i.get_all_records())
-        with st.form("new_order"):
+        with st.form("new"):
             cli, prd = st.text_input("Cliente"), st.text_input("Producto")
-            mon, gas = st.number_input("Precio Cobro $"), st.number_input("Costo Material $")
+            mon, gas = st.number_input("Precio $"), st.number_input("Costo $")
             mats = df_inv['Nombre'].tolist() if not df_inv.empty else []
-            mat = st.selectbox("Insumo a usar", mats)
+            mat = st.selectbox("Material", mats)
             can_u = st.number_input("Cantidad usada", min_value=0.1)
             if st.form_submit_button("REGISTRAR"):
-                # Restar stock
                 idx = df_inv[df_inv['Nombre'] == mat].index[0]
                 nueva = float(df_inv.at[idx, 'Cantidad']) - can_u
                 ws_i.update_cell(idx+2, 6, nueva)
-                # Guardar pedido
                 ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, "", mon, "Producción", gas, ""])
-                st.success("Pedido registrado."); time.sleep(1); st.rerun()
+                st.success("Registrado."); time.sleep(1); st.rerun()
 
-    # --- COTIZADOR ---
     elif menu == "💰 COTIZADOR":
-        costo = st.number_input("Inversión materiales $")
-        margen = st.slider("% Ganancia", 0, 500, 100)
-        st.title(f"Sugerido: ${costo * (1 + margen/100):,.2f}")
+        inv = st.number_input("Inversión $")
+        gan = st.slider("% Ganancia", 0, 500, 100)
+        st.title(f"Sugerido: ${inv * (1 + gan/100):,.2f}")
