@@ -9,138 +9,115 @@ import time
 from datetime import datetime
 import os
 
-# 1. CONFIGURACIÓN E INYECCIÓN DE ESTILO (Réplica Exacta)
-st.set_page_config(page_title="NOVA OS", layout="wide")
-
+# 1. FUERZA BRUTA: ESTILO PARA LAS OPCIONES DEL MENÚ Y DASHBOARD
 st.markdown('''
     <style>
+        /* IMPORTAR FUENTES */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO GENERAL Y LIMPIEZA */
-        .stApp { background-color: #0a0a0a !important; }
-        header, footer, #MainMenu { visibility: hidden; }
+        /* FONDO GENERAL NEGRO PURO */
+        .stApp, [data-testid="stSidebar"], [data-testid="stHeader"] {
+            background-color: #0a0a0a !important;
+        }
 
-        /* LOGO CON EFECTO DE RESPIRACIÓN (EJEMPLO 3) */
-        .logo-container { text-align: center; padding: 30px 0; }
+        /* LOGO "NOVA INK." CENTRAL */
+        .logo-container { text-align: center; padding: 20px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
             font-size: 50px;
             color: white;
-            letter-spacing: -1px;
-            animation: breathe 5s infinite ease-in-out;
+            letter-spacing: -2px;
         }
         .logo-text span { color: #00d4ff; text-shadow: 0 0 15px #00d4ff; }
-        
-        @keyframes breathe {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.03); text-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
-        }
 
-        /* MENU LATERAL: ILUMINACIÓN ULTRA-REACTIVA */
-        [data-testid="stSidebar"] {
-            background-color: #0d0d0d !important;
-            border-right: 1px solid #222 !important;
-        }
-
-        /* Ocultamos el widget de radio estándar para usar nuestro diseño */
-        div[role="radiogroup"] {
-            padding: 10px 0 !important;
-        }
-
-        div[role="radiogroup"] label {
-            background: #151515 !important;
-            border: 1px solid #222 !important;
-            margin-bottom: 12px !important;
+        /* --- MENÚ LATERAL: ESTILO "CELDA DE LUZ" --- */
+        /* Seleccionamos los contenedores de las opciones del radio button */
+        [data-testid="stSidebar"] div[role="radiogroup"] > label {
+            background-color: #151515 !important;
+            border: 1px solid #252525 !important;
+            padding: 15px !important;
             border-radius: 12px !important;
-            padding: 15px 20px !important;
-            transition: 0.4s all cubic-bezier(0.175, 0.885, 0.32, 1.1) !important;
-            cursor: pointer !important;
+            margin-bottom: 10px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
-            align-items: center !important;
         }
 
-        /* EFECTO DE ILUMINACIÓN AL PASAR EL MOUSE (HOVER) */
-        div[role="radiogroup"] label:hover {
+        /* EL BRILLO QUE BUSCAMOS (HOVER) */
+        [data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
-            background: #1c1c1c !important;
-            transform: scale(1.02) translateX(8px);
+            box-shadow: 0px 0px 20px rgba(0, 212, 255, 0.4) !important;
+            background-color: #1a1a1a !important;
+            transform: translateX(8px) !important;
         }
 
-        /* Estilo del texto de las opciones */
-        div[role="radiogroup"] label p {
-            color: #777 !important;
-            font-family: 'Inter', sans-serif !important;
+        /* Color de los textos de las opciones */
+        [data-testid="stSidebar"] div[role="radiogroup"] label p {
+            color: #888 !important;
             font-weight: 700 !important;
+            text-transform: uppercase !important;
             font-size: 13px !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 0 !important;
         }
 
-        div[role="radiogroup"] label:hover p {
+        [data-testid="stSidebar"] div[role="radiogroup"] label:hover p {
             color: white !important;
         }
 
-        /* TARJETAS DEL DASHBOARD (DISEÑO PREMIUM) */
-        .dashboard-card {
+        /* --- DASHBOARD: TARJETAS TIPO EJEMPLO 3 --- */
+        .glass-card {
             background: linear-gradient(145deg, #181818, #0c0c0c);
             border: 1px solid #222;
-            padding: 35px;
+            padding: 40px;
             border-radius: 20px;
             text-align: center;
-            transition: 0.5s ease;
-            position: relative;
+            transition: 0.4s ease;
         }
 
-        .dashboard-card:hover {
+        .glass-card:hover {
             border-color: #00d4ff;
-            box-shadow: 0 0 35px rgba(0, 212, 255, 0.15);
-            transform: translateY(-8px);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+            transform: translateY(-5px);
         }
 
-        /* Indicador de luz superior en las tarjetas */
-        .card-light {
-            height: 2px; width: 40px; 
-            background: #00d4ff; 
-            margin: 15px auto 0; 
-            box-shadow: 0 0 10px #00d4ff;
-            opacity: 0.4;
+        /* Quitar el borde feo que pone Streamlit a los widgets de radio */
+        [data-testid="stSidebar"] div[role="radiogroup"] {
+            gap: 0px !important;
         }
     </style>
 ''', unsafe_allow_html=True)
 
-# 2. RENDERIZADO DEL LOGO
+# 2. LOGO
 st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
 
-# 3. NAVEGACIÓN LATERAL
+# 3. NAVEGACIÓN (Sidebar)
 with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
-    menu = st.radio(
-        "", # Etiqueta vacía para que no ensucie
-        ["DASHBOARD", "PRODUCTOS Y PRECIOS", "STOCK", "NUEVO PEDIDO", "HISTORIAL", "MODIFICAR PEDIDO"]
+    # Importante: No ponerle título al radio para que no aparezca texto extra
+    opcion = st.radio(
+        "", 
+        ["DASHBOARD", "PRODUCTOS Y PRECIOS", "STOCK", "NUEVO PEDIDO", "HISTORIAL", "MODIFICAR PEDIDO"],
+        key="menu_principal"
     )
 
-# 4. CONTENIDO: SOLO PEDIDOS Y BALANCE EN DASHBOARD
-if menu == "DASHBOARD":
-    st.markdown("<br>", unsafe_allow_html=True)
+# 4. CONTENIDO: SOLO PEDIDOS Y BALANCE
+if opcion == "DASHBOARD":
+    st.markdown("<br><br>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown('''
-            <div class="dashboard-card">
-                <p style="color: #555; font-size: 13px; font-weight: 700; letter-spacing: 2px;">PEDIDOS ACTIVOS</p>
+            <div class="glass-card">
+                <p style="color: #666; font-size: 14px; letter-spacing: 2px;">PEDIDOS ACTIVOS</p>
                 <h1 style="color: white; font-family: 'Orbitron'; font-size: 55px; margin: 15px 0;">15</h1>
-                <div class="card-light"></div>
+                <div style="width: 40px; height: 2px; background: #00d4ff; margin: 0 auto; box-shadow: 0 0 10px #00d4ff;"></div>
             </div>
         ''', unsafe_allow_html=True)
 
     with col2:
         st.markdown('''
-            <div class="dashboard-card">
-                <p style="color: #555; font-size: 13px; font-weight: 700; letter-spacing: 2px;">BALANCE ACTUAL</p>
+            <div class="glass-card">
+                <p style="color: #666; font-size: 14px; letter-spacing: 2px;">BALANCE</p>
                 <h1 style="color: #bc39fd; font-family: 'Orbitron'; font-size: 55px; margin: 15px 0;">$2,500</h1>
-                <div class="card-light" style="background: #bc39fd; box-shadow: 0 0 10px #bc39fd;"></div>
+                <div style="width: 40px; height: 2px; background: #bc39fd; margin: 0 auto; box-shadow: 0 0 10px #bc39fd;"></div>
             </div>
         ''', unsafe_allow_html=True)
 
