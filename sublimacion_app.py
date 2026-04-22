@@ -90,7 +90,7 @@ elif st.session_state["authentication_status"]:
         ws_p = sh.worksheet("Pedidos"); ws_i = sh.worksheet("Inventario")
 
         with st.sidebar:
-    # Este bloque fuerza el logo con estilo neón directamente
+    # Este bloque ahora está correctamente indentado
     st.write(f'''
         <div style="text-align: center; padding: 20px 0; margin-bottom: 20px;">
             <h1 style="
@@ -105,6 +105,9 @@ elif st.session_state["authentication_status"]:
             </h1>
         </div>
     ''', unsafe_allow_html=True)
+    
+    # Aquí sigue tu radio button (asegúrate de que también tenga 4 espacios de sangría)
+    menu = st.radio("MENÚ", ["📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"], label_visibility="collapsed")
     
 
         # SECCIÓN DASHBOARD (Tus métricas pero con estilo de la imagen)
