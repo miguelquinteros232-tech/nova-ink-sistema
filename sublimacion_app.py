@@ -13,18 +13,20 @@ import os
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
-        .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
+
+        /* FONDO Y SIDEBAR */
+        .stApp { background-color: #000000 !important; }
         [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
         
-        /* LOGO CON NEÓN */
+        /* LOGO NOVA INK CON NEÓN */
         .logo-box {
             text-align: center; margin: 20px 0 40px 0;
-            font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700;
+            font-family: 'Orbitron', sans-serif; font-size: 35px; font-weight: 700;
             color: #ffffff !important; text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
         }
         .logo-box span { color: #00d4ff !important; }
 
-        /* ITEMS DEL MENÚ CON LUZ */
+        /* BOTONES DEL MENÚ (ESTILO CAPTURA 3) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important; border: 1px solid #1a1a1a !important;
             padding: 15px 20px !important; border-radius: 12px !important;
@@ -37,71 +39,19 @@ st.markdown('''
         div[role="radiogroup"] label p { color: #777 !important; font-weight: 700 !important; }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* TARJETAS DASHBOARD */
+        /* TARJETAS DEL DASHBOARD */
         .metric-card {
             background: linear-gradient(145deg, #0f0f0f, #050505);
-            border: 1px solid #222; padding: 35px 20px;
+            border: 1px solid #222; padding: 30px;
             border-radius: 20px; text-align: center; margin-bottom: 20px;
         }
         .metric-label { color: #555 !important; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 700; color: #ffffff !important; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 40px; font-weight: 700; color: #ffffff !important; }
         
-        /* FORZAR VISIBILIDAD TOTAL */
+        /* FORZAR TODO A BLANCO */
         h1, h2, h3, p, label, span, .stMarkdown { color: #ffffff !important; }
     </style>
 ''', unsafe_allow_html=True)
-
-# --- 2. NAVEGACIÓN ÚNICA (Sin duplicados) ---
-if st.session_state.get("authentication_status"):
-    with st.sidebar:
-        st.markdown('<div class="logo-box">NOVA INK<span>.</span></div>', unsafe_allow_html=True)
-        
-        # El parámetro 'key' evita el error de DuplicateElementId
-        menu = st.radio("", [
-            "📊 DASHBOARD", 
-            "🛍️ PEDIDOS", 
-            "📦 STOCK", 
-            "📜 HISTORIAL", 
-            "💰 COTIZADOR"
-        ], key="menu_principal_nova")
-        
-        st.write("---")
-        if 'authenticator' in locals():
-            try:
-                authenticator.logout('Cerrar Sesión', 'sidebar')
-            except: pass
-
-    # --- 3. DASHBOARD CON VALORES EN 0 ---
-    if "DASHBOARD" in menu:
-        # Valores por defecto para que nunca aparezca vacío
-        cant, monto = 0, 0.0
-        df_act = pd.DataFrame()
-
-        try:
-            # Intento cargar tus datos (ws_p es tu variable de Google Sheets)
-            df_p = pd.DataFrame(ws_p.get_all_records())
-            if not df_p.empty:
-                df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
-                df_act = df_p[df_p['Estado'] != 'Vendido']
-                cant = len(df_act)
-                monto = df_act['Monto'].sum()
-        except Exception:
-            pass # Si falla, se mantienen en 0
-
-        # Mostramos las tarjetas del Dashboard (Sí o sí visibles)
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(f'<div class="metric-card"><div class="metric-label">PEDIDOS ACTIVOS</div><div class="metric-value">{cant}</div></div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown(f'<div class="metric-card"><div class="metric-label">BALANCE PENDIENTE</div><div class="metric-value" style="color:#00d4ff;">${monto:,.0f}</div></div>', unsafe_allow_html=True)
-        
-        st.write("---")
-        st.subheader("📋 Pedidos Actuales")
-        st.dataframe(df_act, use_container_width=True)
-
-# --- ABAJO SIGUE TU LÓGICA DE PEDIDOS, STOCK, ETC. ---
-# Asegúrate de que tus IF usen el nombre con el icono, ej: if menu == "🛍️ PEDIDOS":
-
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
