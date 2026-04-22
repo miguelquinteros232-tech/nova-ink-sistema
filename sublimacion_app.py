@@ -14,93 +14,87 @@ st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 st.markdown('''
     <style>
-        /* 1. FUENTES Y REFRESCO TOTAL */
+        /* 1. CONFIGURACIÓN GLOBAL */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-        html, body, [data-testid="stAppViewContainer"] {
-            background-color: #fcfcfc !important; /* Blanco hueso muy suave */
-            color: #1d1d1f !important; /* Negro Apple */
+        .stApp {
+            background-color: #ffffff !important;
+            color: #1d1d1f !important;
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* 2. LOGO MINIMALISTA */
+        /* 2. LOGO NOVA INK. */
         .main-logo { 
             font-family: 'Inter', sans-serif; 
-            font-size: 40px; text-align: center; 
-            color: #1d1d1f;
-            font-weight: 600; 
-            letter-spacing: -1px; 
-            margin-bottom: 40px;
-            text-transform: lowercase; /* Estilo tech minimal */
+            font-size: 48px; text-align: center; 
+            color: #1d1d1f; font-weight: 600; 
+            letter-spacing: -2px; margin-bottom: 30px;
         }
-        .main-logo::after { content: "."; color: #0071e3; } /* Punto azul de acento */
+        .main-logo::after { content: "."; color: #0071e3; }
 
-        /* 3. MÉTRICAS (Estilo Tarjeta de Estudio) */
-        div[data-testid="metric-container"] {
-            background: white !important;
-            border: 1px solid #e5e5e7 !important;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.03) !important;
-            border-radius: 12px !important;
-            padding: 20px !important;
-            transition: all 0.3s ease !important;
+        /* 3. SIDEBAR (CORRECCIÓN DE VISIBILIDAD) */
+        [data-testid="stSidebar"] {
+            background-color: #f5f5f7 !important;
+            border-right: 1px solid #e5e5e7 !important;
         }
         
-        div[data-testid="metric-container"]:hover {
-            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.08) !important;
-            transform: translateY(-2px);
+        /* Texto del menú lateral en negro para que se vea */
+        [data-testid="stSidebar"] .stRadio label, 
+        [data-testid="stSidebar"] p, 
+        [data-testid="stSidebar"] h1 {
+            color: #1d1d1f !important;
+            font-weight: 500 !important;
         }
 
-        [data-testid="stMetricValue"] > div { color: #1d1d1f !important; font-weight: 600 !important; }
+        /* 4. INPUTS Y CAMPOS (Estilo Apple) */
+        /* Forzamos que los bordes sean grises suaves y el fondo blanco */
+        input, textarea, select, div[data-baseweb="select"] > div {
+            background-color: #ffffff !important;
+            color: #1d1d1f !important;
+            border: 1px solid #d2d2d7 !important;
+            border-radius: 10px !important;
+            font-size: 14px !important;
+        }
 
-        /* 4. BOTONES (Elegancia pura) */
+        /* Cuando haces clic en un campo */
+        input:focus, textarea:focus {
+            border-color: #0071e3 !important;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1) !important;
+        }
+
+        /* 5. TABS (NUEVO PEDIDO / MODIFICAR) */
+        button[data-baseweb="tab"] {
+            color: #86868b !important;
+            font-size: 14px !important;
+            border: none !important;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            color: #0071e3 !important;
+            border-bottom: 2px solid #0071e3 !important;
+        }
+
+        /* 6. BOTÓN CERRAR SESIÓN Y OTROS */
         div.stButton > button {
-            background-color: #1d1d1f !important; /* Negro sólido */
-            color: white !important;
+            background-color: #1d1d1f !important;
+            color: #ffffff !important;
             border: none !important;
             border-radius: 8px !important;
-            padding: 10px 24px !important;
-            font-size: 14px !important;
+            padding: 8px 16px !important;
             font-weight: 400 !important;
-            transition: all 0.2s ease !important;
+            transition: 0.2s;
         }
 
         div.stButton > button:hover {
-            background-color: #0071e3 !important; /* Azul eléctrico al pasar el mouse */
-            box-shadow: 0px 4px 12px rgba(0, 113, 227, 0.3) !important;
+            background-color: #0071e3 !important;
+            box-shadow: 0px 4px 10px rgba(0, 113, 227, 0.3) !important;
         }
 
-        /* 5. SIDEBAR (Limpio y claro) */
-        [data-testid="stSidebar"] {
-            background-color: #f5f5f7 !important; /* Gris claro de sistema */
-            border-right: 1px solid #e5e5e7 !important;
-        }
-
-        /* 6. INPUTS Y FORMULARIOS */
-        input, textarea, select {
-            background-color: white !important;
-            color: #1d1d1f !important;
-            border: 1px solid #d2d2d7 !important;
-            border-radius: 8px !important;
-            padding: 10px !important;
-        }
-
-        input:focus {
-            border-color: #0071e3 !important;
-            outline: none !important;
-        }
-
-        /* 7. EXPANDERS (Diseño plano) */
-        div[data-testid="stExpander"] {
-            background-color: white !important;
+        /* 7. MÉTRICAS */
+        div[data-testid="metric-container"] {
+            background: #ffffff !important;
             border: 1px solid #e5e5e7 !important;
             border-radius: 12px !important;
-            margin-bottom: 10px !important;
-        }
-
-        /* 8. TABLAS */
-        .stDataFrame {
-            border: 1px solid #e5e5e7 !important;
-            border-radius: 12px !important;
+            box-shadow: 0px 2px 8px rgba(0,0,0,0.02) !important;
         }
     </style>
 ''', unsafe_allow_html=True)
