@@ -21,10 +21,10 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. FUNCIONES DE CONFIGURACIÓN ---
+# --- 2. FUNCIONES DE CARGA ---
 def load_config():
     if not os.path.exists("config_pro.yaml"):
-        initial_config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_a'}}
+        initial_config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_auth'}}
         with open("config_pro.yaml", 'w') as f:
             yaml.dump(initial_config, f)
         return initial_config
@@ -33,43 +33,50 @@ def load_config():
 
 # --- 3. AUTENTICACIÓN ---
 config = load_config()
-authenticator = stauth.Authenticate(config['credentials'], config['cookie']['name'], config['cookie']['key'], config['cookie']['expiry_days'])
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
 
-if not st.session_state.get("authentication_status"):
+# Forzar la aparición del login si no está autenticado
+if st.session_state.get("authentication_status") is not True:
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
-    t1, t2 = st.tabs(["🔐 ACCESO", "📝 REGISTRO"])
-    with t1:
+    tab_login, tab_reg = st.tabs(["🔐 ACCESO", "📝 REGISTRO"])
+    
+    with tab_login:
+        # Capturamos el retorno para asegurar que Streamlit refresque el widget
         authenticator.login(location='main')
-    with t2:
+        
+        if st.session_state["authentication_status"] is False:
+            st.error('Usuario o contraseña incorrectos')
+        elif st.session_state["authentication_status"] is None:
+            st.info('Por favor, ingresa tus credenciales para continuar')
+            
+    with tab_reg:
         try:
             if authenticator.register_user(location='main'):
                 with open("config_pro.yaml", 'w') as f:
                     yaml.dump(config, f, default_flow_style=False)
-                st.success('Registrado. Inicia sesión.')
+                st.success('¡Registro exitoso! Ya puedes iniciar sesión en la otra pestaña.')
         except Exception as e:
             st.error(f"Error al registrar: {e}")
 
-# --- 4. APP PRINCIPAL ---
+# --- 4. APLICACIÓN PRINCIPAL (SOLO SI EL STATUS ES TRUE) ---
 elif st.session_state["authentication_status"]:
     
     @st.cache_resource
     def get_gspread_client():
         try:
             scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-            # Verificación de existencia de secrets
-            if "connections" not in st.secrets or "gsheets" not in st.secrets["connections"]:
-                st.error("Faltan los Secrets de 'gsheets' en Streamlit Cloud.")
-                st.stop()
-            
             creds_dict = dict(st.secrets["connections"]["gsheets"])
-            # Reparar saltos de línea en la clave privada
             if "private_key" in creds_dict:
                 creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-            
             credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
             return gspread.authorize(credentials)
         except Exception as e:
-            st.error(f"Error procesando credenciales: {e}")
+            st.error(f"Error en credenciales: {e}")
             st.stop()
 
     try:
@@ -79,16 +86,15 @@ elif st.session_state["authentication_status"]:
         ws_p = sh.worksheet("Pedidos")
         ws_i = sh.worksheet("Inventario")
     except Exception as e:
+        st.error(f"Error de conexión: {e}")
         if "Permission" in str(e):
-            st.error("❌ ERROR DE PERMISOS")
-            st.info(f"Comparte el Excel con: `{st.secrets['connections']['gsheets']['client_email']}`")
-        else:
-            st.error(f"❌ Error de Conexión: {e}")
+            st.info(f"Comparte el Excel con: {st.secrets['connections']['gsheets']['client_email']}")
         st.stop()
 
     with st.sidebar:
-        st.write(f"👤 {st.session_state['name']}")
-        menu = st.radio("SISTEMA", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.markdown(f"### 👤 {st.session_state['name']}")
+        menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
+        st.divider()
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
     st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
@@ -99,13 +105,13 @@ elif st.session_state["authentication_status"]:
         if not df_p.empty:
             df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
             df_p['Gasto_Prod'] = pd.to_numeric(df_p['Gasto_Prod'], errors='coerce').fillna(0)
-            v = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
-            g = df_p['Gasto_Prod'].sum()
+            ventas = df_p[df_p['Estado'] == 'Vendido']['Monto'].sum()
+            gastos = df_p['Gasto_Prod'].sum()
             
             c1, c2, c3 = st.columns(3)
-            c1.metric("INGRESOS", f"${v:,.2f}")
-            c2.metric("GASTOS", f"${g:,.2f}")
-            c3.metric("UTILIDAD", f"${v - g:,.2f}")
+            c1.metric("VENTAS", f"${ventas:,.2f}")
+            c2.metric("GASTOS", f"${gastos:,.2f}")
+            c3.metric("UTILIDAD", f"${ventas - gastos:,.2f}")
 
             for i, r in df_p.iterrows():
                 bloqueado = r['Estado'] == "Vendido"
@@ -124,7 +130,7 @@ elif st.session_state["authentication_status"]:
     elif menu == "📦 STOCK":
         df_inv = pd.DataFrame(ws_i.get_all_records())
         with st.expander("➕ AGREGAR MATERIAL"):
-            with st.form("add_st"):
+            with st.form("add_stock"):
                 c1, c2 = st.columns(2)
                 cat, nom = c1.text_input("Categoría"), c1.text_input("Nombre")
                 tip, tal = c2.text_input("Tipo"), c2.text_input("Talle")
@@ -140,21 +146,21 @@ elif st.session_state["authentication_status"]:
         df_inv = pd.DataFrame(ws_i.get_all_records())
         with st.form("new_order"):
             cli, prd = st.text_input("Cliente"), st.text_input("Producto")
-            mon, gas = st.number_input("Precio $"), st.number_input("Costo $")
-            mat = st.selectbox("Material", df_inv['Nombre'].tolist() if not df_inv.empty else [])
-            can_u = st.number_input("Cantidad", min_value=0.1)
+            mon, gas = st.number_input("Precio Cobro $"), st.number_input("Costo Material $")
+            mats = df_inv['Nombre'].tolist() if not df_inv.empty else []
+            mat = st.selectbox("Insumo a usar", mats)
+            can_u = st.number_input("Cantidad usada", min_value=0.1)
             if st.form_submit_button("REGISTRAR"):
+                # Restar stock
                 idx = df_inv[df_inv['Nombre'] == mat].index[0]
                 nueva = float(df_inv.at[idx, 'Cantidad']) - can_u
                 ws_i.update_cell(idx+2, 6, nueva)
+                # Guardar pedido
                 ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, "", mon, "Producción", gas, ""])
-                st.success("Registrado correctamente"); time.sleep(1); st.rerun()
+                st.success("Pedido registrado."); time.sleep(1); st.rerun()
 
     # --- COTIZADOR ---
     elif menu == "💰 COTIZADOR":
-        costo = st.number_input("Costo $")
+        costo = st.number_input("Inversión materiales $")
         margen = st.slider("% Ganancia", 0, 500, 100)
         st.title(f"Sugerido: ${costo * (1 + margen/100):,.2f}")
-
-elif st.session_state["authentication_status"] is False:
-    st.error('Usuario o contraseña incorrectos')
