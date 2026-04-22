@@ -16,99 +16,68 @@ st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* 1. FONDO NEGRO PURO Y LIMPIEZA */
+        /* 1. FONDO NEGRO Y TEXTOS BLANCOS FORZADOS */
         .stApp { background-color: #000000 !important; }
-        [data-testid="stSidebar"], [data-testid="stHeader"] { background-color: #000000 !important; }
+        [data-testid="stSidebar"] { background-color: #050505 !important; }
         
-        /* 2. LOGO RESTAURADO Y CORREGIDO */
-        .logo-container { 
-            text-align: center; 
-            padding: 30px 0;
-            background: transparent;
+        /* Forzar que todos los textos de Streamlit se vean */
+        .stMarkdown, p, label, h1, h2, h3, span { 
+            color: #ffffff !important; 
         }
+
+        /* 2. LOGO NOVA INK */
+        .logo-container { text-align: center; padding: 20px 0; margin-bottom: 20px; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 48px; color: #ffffff !important; 
+            font-size: 45px; font-weight: 700;
+            color: #ffffff !important;
             letter-spacing: 3px;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
-            display: block !important;
         }
-        .logo-text span { color: #00d4ff !important; }
+        .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
 
-        /* 3. MENÚ LATERAL CON ICONOS Y PERSONALIDAD */
-        div[role="radiogroup"] { gap: 10px !important; }
-
+        /* 3. MENÚ LATERAL: CELDAS DE LUZ CON ICONOS */
         div[role="radiogroup"] label {
-            background: #0d0d0d !important;
-            border: 1px solid #1a1a1a !important;
-            padding: 18px !important;
+            background: #111111 !important;
+            border: 1px solid #222222 !important;
+            padding: 15px 20px !important;
             border-radius: 12px !important;
-            transition: 0.4s all ease !important;
+            margin-bottom: 10px !important;
+            transition: 0.3s all ease !important;
         }
 
-        /* Efecto Hover Imagen 3 */
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
             transform: translateX(10px);
         }
 
-        /* Texto del Menú */
-        div[role="radiogroup"] label p {
-            color: #aaaaaa !important;
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 700 !important;
-            font-size: 14px !important;
-            letter-spacing: 1px;
-        }
-
-        div[role="radiogroup"] label:hover p { color: #ffffff !important; }
-
-        /* 4. TARJETAS DE BALANCE Y PEDIDOS (RESTAURADAS) */
+        /* 4. TARJETAS DEL DASHBOARD (VISIBILIDAD TOTAL) */
         .glass-card {
-            background: linear-gradient(145deg, #111111, #050505);
-            border: 1px solid #222222;
-            padding: 40px 20px;
-            border-radius: 20px;
-            text-align: center;
-            margin: 10px 0;
-            display: block !important; /* Asegura que se vea */
+            background-color: #111111 !important;
+            border: 2px solid #222222 !important;
+            padding: 30px !important;
+            border-radius: 20px !important;
+            text-align: center !important;
+            margin: 10px 0 !important;
         }
         
         .card-title {
-            color: #666666 !important;
-            font-size: 12px !important;
+            color: #888888 !important;
+            font-size: 14px !important;
             letter-spacing: 2px;
             font-weight: 700;
-            text-transform: uppercase;
+            margin-bottom: 10px;
         }
 
         .card-value {
             font-family: 'Orbitron', sans-serif !important;
-            font-size: 45px !important;
-            margin: 10px 0 !important;
-            display: block !important;
-        }
-
-        /* 5. INPUTS Y BOTONES */
-        .stButton button {
-            background-color: transparent !important;
-            color: #00d4ff !important;
-            border: 1px solid #00d4ff !important;
-            border-radius: 10px !important;
-            font-family: 'Orbitron' !important;
-            transition: 0.3s !important;
-        }
-        .stButton button:hover {
-            background-color: #00d4ff !important;
-            color: #000 !important;
-            box-shadow: 0 0 20px #00d4ff !important;
+            font-size: 48px !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
         }
     </style>
 ''', unsafe_allow_html=True)
-
-# LOGO (Asegúrate de que esta línea esté después del CSS)
-st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
