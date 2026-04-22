@@ -16,57 +16,108 @@ st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* Fondo Negro y Textos Visibles */
-        .stApp, [data-testid="stSidebar"], [data-testid="stHeader"] {
+        /* 1. FONDO Y ESTRUCTURA BASE */
+        .stApp {
             background-color: #000000 !important;
         }
-        .stMarkdown, p, label, .stButton button p { color: white !important; }
-        
-        /* Input fields visibles */
-        input, textarea, [data-baseweb="select"] > div {
-            background-color: #111 !important;
-            color: white !important;
-            border: 1px solid #333 !important;
+        [data-testid="stSidebar"] {
+            background-color: #050505 !important;
+            border-right: 1px solid #1a1a1a !important;
+        }
+        [data-testid="stHeader"] {
+            background-color: rgba(0,0,0,0) !important;
         }
 
-        /* Logo NOVA INK. */
-        .logo-container { text-align: center; padding: 20px 0; }
+        /* 2. TEXTOS Y CAMPOS (PARA QUE NO SE VEA "TODO NEGRO") */
+        .stMarkdown, p, label, .stHeader h1, h2, h3 { 
+            color: #e0e0e0 !important; 
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Inputs, Selects y Textareas con look Neon */
+        input, textarea, [data-baseweb="select"] > div {
+            background-color: #0a0a0a !important;
+            color: white !important;
+            border: 1px solid #222 !important;
+            border-radius: 8px !important;
+        }
+        input:focus {
+            border-color: #00d4ff !important;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2) !important;
+        }
+
+        /* 3. LOGO NOVA INK (ESTILO IMAGEN 3) */
+        .logo-container { text-align: center; padding-bottom: 20px; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 50px; color: white; letter-spacing: -2px;
+            font-size: 45px; color: white; letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(255,255,255,0.1);
         }
-        .logo-text span { color: #00d4ff; text-shadow: 0 0 15px #00d4ff; }
+        .logo-text span { color: #00d4ff; text-shadow: 0 0 20px #00d4ff; }
 
-        /* Estilo de Menú Lateral (Celdas de luz) */
+        /* 4. MENÚ LATERAL: CELDAS DE LUZ REACTIVAS */
         div[role="radiogroup"] label {
-            background-color: #111 !important;
-            border: 1px solid #222 !important;
-            padding: 15px !important;
-            border-radius: 12px !important;
-            margin-bottom: 8px !important;
-            transition: 0.3s all ease !important;
+            background: #0d0d0d !important;
+            border: 1px solid #1a1a1a !important;
+            padding: 14px 20px !important;
+            border-radius: 10px !important;
+            margin-bottom: 10px !important;
+            transition: 0.4s all cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0px 0px 20px rgba(0, 212, 255, 0.4) !important;
-            transform: translateX(5px) !important;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+            transform: translateX(8px) !important;
+            background: #111 !important;
         }
-        div[role="radiogroup"] label p { color: #888 !important; font-weight: 700 !important; }
-        div[role="radiogroup"] label:hover p { color: white !important; }
+        div[role="radiogroup"] label p {
+            color: #666 !important; font-weight: 700 !important;
+            text-transform: uppercase; letter-spacing: 1px; font-size: 13px !important;
+        }
+        div[role="radiogroup"] label:hover p { color: #00d4ff !important; }
 
-        /* Tarjetas Dashboard */
+        /* 5. TARJETAS DEL DASHBOARD (LOOK VIDRIO OSCURO) */
         .glass-card {
-            background: linear-gradient(145deg, #151515, #050505);
+            background: linear-gradient(145deg, #111, #050505);
             border: 1px solid #222;
-            padding: 35px;
-            border-radius: 20px;
+            padding: 30px;
+            border-radius: 18px;
             text-align: center;
-            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: 0.5s ease;
+        }
+        .glass-card:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
+        }
+        .glass-card h1 {
+            font-family: 'Orbitron', sans-serif !important;
+            margin: 10px 0 !important;
+        }
+
+        /* 6. BOTONES (PARA QUE NO SEAN GRISES) */
+        .stButton button {
+            background-color: #00d4ff !important;
+            color: black !important;
+            font-weight: bold !important;
+            border: none !important;
+            border-radius: 8px !important;
+            transition: 0.3s !important;
+        }
+        .stButton button:hover {
+            background-color: white !important;
+            box-shadow: 0 0 15px white !important;
+        }
+        
+        /* 7. TABLAS Y DATAFRAMES */
+        [data-testid="stDataFrame"] {
+            background-color: #080808 !important;
+            border-radius: 10px;
+            border: 1px solid #1a1a1a;
         }
     </style>
 ''', unsafe_allow_html=True)
-
-st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
