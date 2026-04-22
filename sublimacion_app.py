@@ -13,23 +13,23 @@ import streamlit as st
 import pandas as pd
 
 # ==========================================
-# 1. ESTILOS Y DISEÑO (ST.MARKDOWN)
+# 1. ESTILOS GLOBALES (VISIBILIDAD Y NEÓN)
 # ==========================================
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* Fondo Negro y Sidebar */
+        /* Fondo Negro Absoluto */
         .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
         [data-testid="stSidebar"] { 
             background-color: #050505 !important; 
             border-right: 1px solid #1a1a1a !important; 
         }
 
-        /* Texto General Forzado a Blanco */
+        /* Texto Blanco Forzado */
         h1, h2, h3, p, span, label, div { color: white !important; }
 
-        /* Botones del Menú (Captura 3) */
+        /* Estilo de Botones del Menú */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #1a1a1a !important;
@@ -49,10 +49,10 @@ st.markdown('''
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. SIDEBAR Y LOGO (CUIDADO CON LA INDENTACIÓN)
+# 2. SIDEBAR Y LOGO (LÍNEA 177 CORREGIDA)
 # ==========================================
 with st.sidebar:
-    # EL LOGO CON EFECTO NEÓN (Indentado con 4 espacios)
+    # EL LOGO CON EFECTO NEÓN (Aquí es donde daba el error de indentación)
     st.write(f'''
         <div style="text-align: center; margin: 20px 0 40px 0;">
             <h1 style="
@@ -61,48 +61,47 @@ with st.sidebar:
                 font-weight: 700;
                 color: #FFFFFF !important;
                 text-shadow: 0 0 20px #00d4ff, 0 0 5px #ffffff; 
-                margin:0;
+                margin: 0;
             ">
                 NOVA INK<span style="color: #00d4ff !important;">.</span>
             </h1>
         </div>
     ''', unsafe_allow_html=True)
     
-    # TU RADIO DE NAVEGACIÓN (Asegúrate de que sea el único)
+    # Menú de Navegación Único
     menu = st.radio("", [
         "📊 DASHBOARD", 
         "🛍️ PEDIDOS", 
         "📦 STOCK", 
         "📜 HISTORIAL", 
         "💰 COTIZADOR"
-    ], key="nav_nova_ink")
+    ], key="nav_nova_ink_final")
     
     st.write("---")
-    # Agrega aquí tu botón de cerrar sesión si lo tienes
 
 # ==========================================
-# 3. LÓGICA DEL DASHBOARD (BALANCES EN 0)
+# 3. LÓGICA DEL DASHBOARD (CEROS FORZADOS)
 # ==========================================
 if "DASHBOARD" in menu:
-    # 1. Variables seguras inicializadas en 0
+    # 1. Aseguramos que las variables existan en 0
     v_pedidos = 0
     v_monto = 0.0
     
-    # 2. Tu lógica de datos (Mantenla aquí)
+    # 2. Tu lógica para cargar datos (Mantenla aquí)
     try:
-        # Ejemplo: df_act = obtener_datos()
+        # Aquí usa tus variables reales, ejemplo: if not df_act.empty...
         if 'df_act' in locals() and not df_act.empty:
             v_pedidos = len(df_act)
             v_monto = df_act['Monto'].sum()
     except:
-        pass # Si falla, se muestran los ceros
+        pass # Si falla, se quedan en 0
 
-    # 3. Renderizado visual de los balances
+    # 3. Renderizado de Tarjetas Visuales (Estilo Imagen 3)
     col1, col2 = st.columns(2)
     
     with col1:
         st.write(f'''
-            <div style="background: linear-gradient(145deg, #0f0f0f, #050505); border: 1px solid #222; padding: 30px; border-radius: 20px; text-align: center;">
+            <div style="background: linear-gradient(145deg, #111, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
                 <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
                 <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: white !important; margin: 10px 0 0 0;">{v_pedidos}</h2>
             </div>
@@ -110,14 +109,13 @@ if "DASHBOARD" in menu:
         
     with col2:
         st.write(f'''
-            <div style="background: linear-gradient(145deg, #0f0f0f, #050505); border: 1px solid #222; padding: 30px; border-radius: 20px; text-align: center;">
+            <div style="background: linear-gradient(145deg, #111, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
                 <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">BALANCE PENDIENTE</p>
                 <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: #00d4ff !important; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
             </div>
         ''', unsafe_allow_html=True)
 
     st.write("---")
-    # Aquí puedes seguir con tu tabla de pedidos habitual...
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
