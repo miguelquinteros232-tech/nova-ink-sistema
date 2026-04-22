@@ -12,7 +12,6 @@ import os
 import streamlit as st
 import pandas as pd
 
-
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
@@ -69,64 +68,60 @@ elif st.session_state["authentication_status"]:
         ws_p = sh.worksheet("Pedidos"); ws_i = sh.worksheet("Inventario")
 
         with st.sidebar:
-    # LOGO NOVA INK CON EFECTO NEÓN (Línea 94 corregida)
-    st.write(f'''
-        <div style="text-align: center; padding: 20px 0; margin-bottom: 10px;">
-            <h1 style="
-                font-family: 'Orbitron', sans-serif; 
-                font-size: 35px; 
-                font-weight: 700;
-                color: #FFFFFF !important; 
-                text-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff;
-                margin: 0;
-            ">
-                NOVA INK<span style="color: #00d4ff !important;">.</span>
-            </h1>
-        </div>
-    ''', unsafe_allow_html=True)
-    
-    # Menú Único (Asegúrate de que este sea el único st.radio de tu app)
-    menu = st.radio("", [
-        "📊 DASHBOARD", 
-        "🛍️ PEDIDOS", 
-        "📦 STOCK", 
-        "📜 HISTORIAL", 
-        "💰 COTIZADOR"
-    ], key="nav_nova_ink")
+            # LOGO NOVA INK CON EFECTO NEÓN
+            st.write(f'''
+                <div style="text-align: center; padding: 20px 0; margin-bottom: 10px;">
+                    <h1 style="
+                        font-family: 'Orbitron', sans-serif; 
+                        font-size: 35px; 
+                        font-weight: 700;
+                        color: #FFFFFF !important; 
+                        text-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff;
+                        margin: 0;
+                    ">
+                        NOVA INK<span style="color: #00d4ff !important;">.</span>
+                    </h1>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            # Menú Único
+            menu = st.radio("", [
+                "📊 DASHBOARD", 
+                "🛍️ PEDIDOS", 
+                "📦 STOCK", 
+                "📜 HISTORIAL", 
+                "💰 COTIZADOR"
+            ], key="nav_nova_ink")
 
-        # SECCIÓN DASHBOARD (Tus métricas pero con estilo de la imagen)
+        # SECCIÓN DASHBOARD
         if "DASHBOARD" in menu:
-    # 1. Lógica ultra-segura para los ceros
-    try:
-        # Reemplaza 'df_act' por tu variable real de pedidos activos
-        v_pedidos = len(df_act) if ('df_act' in locals() or 'df_act' in globals()) else 0
-        v_monto = df_act['Monto'].sum() if ('df_act' in locals() or 'df_act' in globals()) else 0
-    except:
-        v_pedidos, v_monto = 0, 0
+            try:
+                # Lógica para los ceros
+                v_pedidos = len(df_act) if ('df_act' in locals() or 'df_act' in globals()) else 0
+                v_monto = df_act['Monto'].sum() if ('df_act' in locals() or 'df_act' in globals()) else 0
+            except:
+                v_pedidos, v_monto = 0, 0
 
-    # 2. Renderizado con Estilos Forzados (Inline)
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write(f'''
-            <div style="background: #0d0d0d; border: 1px solid #222; padding: 30px; border-radius: 15px; text-align: center;">
-                <p style="color: #666 !important; font-family: sans-serif; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
-                <h2 style="color: #FFFFFF !important; font-family: 'Orbitron', sans-serif; font-size: 45px; margin: 10px 0 0 0;">{v_pedidos}</h2>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-    with col2:
-        st.write(f'''
-            <div style="background: #0d0d0d; border: 1px solid #222; padding: 30px; border-radius: 15px; text-align: center;">
-                <p style="color: #666 !important; font-family: sans-serif; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">BALANCE PENDIENTE</p>
-                <h2 style="color: #00d4ff !important; font-family: 'Orbitron', sans-serif; font-size: 45px; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
-            </div>
-        ''', unsafe_allow_html=True)
-    
-    st.write("---")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f'''
+                    <div style="background: #0d0d0d; border: 1px solid #222; padding: 30px; border-radius: 15px; text-align: center;">
+                        <p style="color: #666 !important; font-family: sans-serif; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
+                        <h2 style="color: #FFFFFF !important; font-family: 'Orbitron', sans-serif; font-size: 45px; margin: 10px 0 0 0;">{v_pedidos}</h2>
+                    </div>
+                ''', unsafe_allow_html=True)
+                
+            with col2:
+                st.write(f'''
+                    <div style="background: #0d0d0d; border: 1px solid #222; padding: 30px; border-radius: 15px; text-align: center;">
+                        <p style="color: #666 !important; font-family: sans-serif; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">BALANCE PENDIENTE</p>
+                        <h2 style="color: #00d4ff !important; font-family: 'Orbitron', sans-serif; font-size: 45px; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
+                    </div>
+                ''', unsafe_allow_html=True)
+            st.write("---")
 
-        # SECCIÓN GESTIÓN PEDIDOS (REPLICA EXACTA DE TUS TABS Y FORMULARIOS)
-        elif menu == "GESTIÓN PEDIDOS":
+        # SECCIÓN GESTIÓN PEDIDOS
+        elif menu == "🛍️ PEDIDOS":
             tab1, tab2 = st.tabs(["NUEVO PEDIDO", "MODIFICAR EXISTENTE"])
             df_inv = pd.DataFrame(ws_i.get_all_records())
             
@@ -150,10 +145,9 @@ elif st.session_state["authentication_status"]:
                 df_p = pd.DataFrame(ws_p.get_all_records())
                 if not df_p.empty:
                     sel = st.selectbox("Seleccionar Pedido", df_p['Cliente'] + " - " + df_p['Producto'])
-                    # (Aquí seguiría el resto de tu lógica de modificar...)
 
-        # SECCIÓN STOCK (TU LÓGICA ORIGINAL)
-        elif menu == "STOCK":
+        # SECCIÓN STOCK
+        elif menu == "📦 STOCK":
             df_st = pd.DataFrame(ws_i.get_all_records())
             st.dataframe(df_st, use_container_width=True)
             with st.expander("➕ AGREGAR MATERIAL"):
@@ -164,15 +158,16 @@ elif st.session_state["authentication_status"]:
                     if st.form_submit_button("CARGAR"):
                         ws_i.append_row([cat, nom, tip, tal, col, can, uni]); st.rerun()
 
-        # SECCIÓN HISTORIAL Y COTIZADOR (REPLICA EXACTA)
-        elif menu == "HISTORIAL":
+        # SECCIÓN HISTORIAL
+        elif menu == "📜 HISTORIAL":
             df_h = pd.DataFrame(ws_p.get_all_records())
             if not df_h.empty:
                 df_v = df_h[df_h['Estado'] == 'Vendido']
                 st.write("### Ventas Finalizadas")
                 st.table(df_v)
 
-        elif menu == "COTIZADOR":
+        # SECCIÓN COTIZADOR
+        elif menu == "💰 COTIZADOR":
             c1, c2 = st.columns(2)
             ins = c1.number_input("Insumos $")
             hrs = c1.number_input("Horas Trabajo")
