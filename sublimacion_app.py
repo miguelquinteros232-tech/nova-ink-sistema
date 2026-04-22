@@ -32,7 +32,7 @@ def load_config():
 
 config = load_config()
 
-# --- 3. SISTEMA DE AUTENTICACIÓN (NUEVA VERSIÓN) ---
+# --- 3. AUTENTICACIÓN ---
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -42,24 +42,24 @@ authenticator = stauth.Authenticate(
 
 st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-# LA CORRECCIÓN CRÍTICA: En la nueva versión solo se pasa 'location'
+# Login sin parámetros obsoletos
 authenticator.login(location='main')
 
-if st.session_state["authentication_status"] is False:
+if st.session_state.get("authentication_status") is False:
     st.error('Usuario o contraseña incorrectos')
-elif st.session_state["authentication_status"] is None:
+elif st.session_state.get("authentication_status") is None:
     st.info('Ingresa tus credenciales.')
     with st.expander("📝 REGISTRARSE"):
         try:
             if authenticator.register_user(location='main'):
                 with open("config_pro.yaml", 'w') as f:
                     yaml.dump(config, f, default_flow_style=False)
-                st.success('¡Usuario creado! Ya puedes iniciar sesión arriba.')
+                st.success('¡Usuario creado! Inicia sesión arriba.')
         except Exception as e:
             st.error(f"Error: {e}")
 
 # --- 4. APP PRINCIPAL ---
-elif st.session_state["authentication_status"]:
+elif st.session_state.get("authentication_status"):
     
     @st.cache_resource
     def get_gspread_client():
@@ -71,17 +71,23 @@ elif st.session_state["authentication_status"]:
             credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
             return gspread.authorize(credentials)
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Error técnico en credenciales: {e}")
             st.stop()
 
-    # Conexión a Google Sheets
     try:
         client = get_gspread_client()
-        sh = client.open_by_key("11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8")
+        # VERIFICAR QUE ESTE ID SEA EL CORRECTO:
+        SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
+        sh = client.open_by_key(SHEET_ID)
+        
+        # VERIFICAR QUE LAS PESTAÑAS SE LLAMEN EXACTAMENTE ASÍ:
         ws_p = sh.worksheet("Pedidos")
         ws_i = sh.worksheet("Inventario")
     except Exception as e:
-        st.error("Error de conexión. Verifica permisos en el Excel.")
+        st.error(f"❌ Error de Conexión: {e}")
+        bot_email = st.secrets["connections"]["gsheets"]["client_email"]
+        st.warning(f"1. Verifica que compartiste con: `{bot_email}`")
+        st.warning(f"2. Verifica que las pestañas en Excel se llamen 'Pedidos' e 'Inventario'")
         st.stop()
 
     with st.sidebar:
@@ -89,7 +95,6 @@ elif st.session_state["authentication_status"]:
         menu = st.radio("MENÚ", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    # --- CONTENIDO ---
     if menu == "📊 DASHBOARD":
         df_p = pd.DataFrame(ws_p.get_all_records())
         if not df_p.empty:
@@ -101,6 +106,8 @@ elif st.session_state["authentication_status"]:
             c1.metric("VENTAS", f"${v:,.2f}")
             c2.metric("COSTOS", f"${g:,.2f}")
             c3.metric("UTILIDAD", f"${v - g:,.2f}")
+        else:
+            st.info("No hay pedidos registrados aún.")
 
     elif menu == "📦 STOCK":
         df_inv = pd.DataFrame(ws_i.get_all_records())
@@ -119,7 +126,7 @@ elif st.session_state["authentication_status"]:
             cli, prd = st.text_input("Cliente"), st.text_input("Producto")
             mon = st.number_input("Monto $")
             mats = df_inv['Nombre'].tolist() if not df_inv.empty else []
-            mat = st.selectbox("Insumo", mats)
+            mat = st.selectbox("Material", mats)
             can_u = st.number_input("Cantidad", min_value=0.1)
             if st.form_submit_button("REGISTRAR"):
                 idx = df_inv[df_inv['Nombre'] == mat].index[0]
