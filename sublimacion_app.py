@@ -16,105 +16,114 @@ st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* 1. FONDO Y ESTRUCTURA BASE */
+        /* 1. RESET TOTAL DEL TEMA (FONDO NEGRO PURO) */
         .stApp {
             background-color: #000000 !important;
         }
-        [data-testid="stSidebar"] {
-            background-color: #050505 !important;
-            border-right: 1px solid #1a1a1a !important;
-        }
-        [data-testid="stHeader"] {
-            background-color: rgba(0,0,0,0) !important;
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"] {
+            background-color: #000000 !important;
+            border: none !important;
         }
 
-        /* 2. TEXTOS Y CAMPOS (PARA QUE NO SE VEA "TODO NEGRO") */
-        .stMarkdown, p, label, .stHeader h1, h2, h3 { 
-            color: #e0e0e0 !important; 
-            font-family: 'Inter', sans-serif;
-        }
-        
-        /* Inputs, Selects y Textareas con look Neon */
-        input, textarea, [data-baseweb="select"] > div {
-            background-color: #0a0a0a !important;
-            color: white !important;
-            border: 1px solid #222 !important;
-            border-radius: 8px !important;
-        }
-        input:focus {
-            border-color: #00d4ff !important;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2) !important;
+        /* Ocultar la línea roja superior de Streamlit */
+        [data-testid="stDecoration"] { display: none; }
+
+        /* 2. TEXTOS GENERALES */
+        .stMarkdown, p, label { 
+            color: #ffffff !important; 
+            font-family: 'Inter', sans-serif !important;
         }
 
-        /* 3. LOGO NOVA INK (ESTILO IMAGEN 3) */
-        .logo-container { text-align: center; padding-bottom: 20px; }
+        /* 3. LOGO NOVA INK (NEÓN CIAN) */
+        .logo-container { text-align: center; padding: 40px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 45px; color: white; letter-spacing: 2px;
-            text-shadow: 0 0 15px rgba(255,255,255,0.1);
+            font-size: 50px; color: white; letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
         }
-        .logo-text span { color: #00d4ff; text-shadow: 0 0 20px #00d4ff; }
+        .logo-text span { color: #00d4ff; text-shadow: 0 0 25px #00d4ff; }
 
-        /* 4. MENÚ LATERAL: CELDAS DE LUZ REACTIVAS */
-        div[role="radiogroup"] label {
-            background: #0d0d0d !important;
-            border: 1px solid #1a1a1a !important;
-            padding: 14px 20px !important;
-            border-radius: 10px !important;
-            margin-bottom: 10px !important;
-            transition: 0.4s all cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        /* 4. MENÚ LATERAL: LAS CELDAS DE LUZ (IMAGEN 3) */
+        /* Quitamos el padding por defecto de la sidebar */
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+            padding: 10px !important;
         }
+
+        /* Estilo para las opciones del Radio Button */
+        div[role="radiogroup"] {
+            gap: 15px !important;
+        }
+
+        div[role="radiogroup"] label {
+            background: #0a0a0a !important;
+            border: 1px solid #1a1a1a !important;
+            padding: 20px !important;
+            border-radius: 15px !important;
+            transition: 0.4s all ease-in-out !important;
+            cursor: pointer !important;
+        }
+
+        /* Efecto de Iluminación Cian al pasar el mouse */
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
-            transform: translateX(8px) !important;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4) !important;
+            transform: translateX(10px);
             background: #111 !important;
         }
-        div[role="radiogroup"] label p {
-            color: #666 !important; font-weight: 700 !important;
-            text-transform: uppercase; letter-spacing: 1px; font-size: 13px !important;
-        }
-        div[role="radiogroup"] label:hover p { color: #00d4ff !important; }
 
-        /* 5. TARJETAS DEL DASHBOARD (LOOK VIDRIO OSCURO) */
+        div[role="radiogroup"] label p {
+            color: #666 !important;
+            font-family: 'Orbitron', sans-serif !important;
+            font-size: 12px !important;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        div[role="radiogroup"] label:hover p {
+            color: #ffffff !important;
+        }
+
+        /* 5. TARJETAS DEL DASHBOARD (DISEÑO VIDRIO) */
         .glass-card {
-            background: linear-gradient(145deg, #111, #050505);
+            background: linear-gradient(145deg, #0f0f0f, #050505);
             border: 1px solid #222;
-            padding: 30px;
-            border-radius: 18px;
+            padding: 50px 20px;
+            border-radius: 25px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
             transition: 0.5s ease;
         }
         .glass-card:hover {
             border-color: #00d4ff;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
-        }
-        .glass-card h1 {
-            font-family: 'Orbitron', sans-serif !important;
-            margin: 10px 0 !important;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.2);
         }
 
-        /* 6. BOTONES (PARA QUE NO SEAN GRISES) */
+        /* 6. INPUTS Y BOTONES FORMULARIO */
+        input, textarea, [data-baseweb="select"] > div {
+            background-color: #050505 !important;
+            color: white !important;
+            border: 1px solid #333 !important;
+        }
+
         .stButton button {
-            background-color: #00d4ff !important;
-            color: black !important;
-            font-weight: bold !important;
-            border: none !important;
-            border-radius: 8px !important;
+            width: 100%;
+            background-color: transparent !important;
+            color: #00d4ff !important;
+            border: 1px solid #00d4ff !important;
+            font-family: 'Orbitron' !important;
+            padding: 10px !important;
+            border-radius: 10px !important;
             transition: 0.3s !important;
         }
         .stButton button:hover {
-            background-color: white !important;
-            box-shadow: 0 0 15px white !important;
+            background-color: #00d4ff !important;
+            color: black !important;
+            box-shadow: 0 0 20px #00d4ff !important;
         }
-        
-        /* 7. TABLAS Y DATAFRAMES */
+
+        /* 7. TABLAS */
         [data-testid="stDataFrame"] {
-            background-color: #080808 !important;
-            border-radius: 10px;
-            border: 1px solid #1a1a1a;
+            border: 1px solid #222;
+            border-radius: 15px;
         }
     </style>
 ''', unsafe_allow_html=True)
