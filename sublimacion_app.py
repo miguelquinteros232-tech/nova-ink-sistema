@@ -21,52 +21,62 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. ACCESO (CORREGIDO) ---
-authenticator.login(location='main')
+# --- 2. CARGA DE CONFIGURACIÓN Y AUTENTICADOR ---
+def load_config():
+    if not os.path.exists("config_pro.yaml"):
+        # Estructura inicial obligatoria para evitar que el autenticador falle
+        initial_config = {
+            'credentials': {'usernames': {}}, 
+            'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_auth'},
+            'preauthorized': {'emails': []}
+        }
+        with open("config_pro.yaml", 'w') as f: 
+            yaml.dump(initial_config, f)
+        return initial_config
+    
+    with open("config_pro.yaml") as f:
+        cfg = yaml.load(f, Loader=SafeLoader)
+        # Verificación de seguridad: si el archivo existe pero está mal formado
+        if cfg is None or 'credentials' not in cfg:
+            return {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_auth'}}
+        return cfg
+
+# Intentamos crear el objeto authenticator
+try:
+    config = load_config()
+    authenticator = stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days']
+    )
+except Exception as e:
+    st.error(f"Error crítico al inicializar el autenticador: {e}")
+    st.stop()
+
+st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
+
+# --- 3. ACCESO ---
+# Ahora invocamos login con seguridad
+try:
+    authenticator.login(location='main')
+except Exception as e:
+    st.error("Error en el módulo de login. Por favor, reinicia la app.")
+    st.stop()
 
 if st.session_state.get("authentication_status") is not True:
     st.info("Sistema de gestión Nova Ink. Por favor identifíquese.")
     with st.expander("📝 REGISTRO"):
         try:
-            # Versión compatible con las últimas actualizaciones de la librería
+            # Nueva firma del método register_user para evitar el TypeError anterior
             result = authenticator.register_user(location='main', pre_authorization=[])
             if result:
-                # El componente devuelve True si el registro fue exitoso
-                if result[0]: 
-                    with open("config_pro.yaml", 'w') as f:
-                        yaml.dump(config, f, default_flow_style=False)
-                    st.success('Usuario registrado correctamente. Ya puede iniciar sesión arriba.')
+                # Si se registró alguien, guardamos los cambios en el archivo
+                with open("config_pro.yaml", 'w') as f:
+                    yaml.dump(config, f, default_flow_style=False)
+                st.success('Usuario registrado. Ya puede iniciar sesión arriba.')
         except Exception as e:
-            # Si la base de datos de usuarios está vacía, la librería a veces lanza error
-            # Aquí lo capturamos para que no rompa la app
-            st.warning("Complete los campos para registrarse.")
-
-# --- 3. CONEXIÓN ---
-else:
-    @st.cache_resource
-    def get_db():
-        try:
-            scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-            creds_dict = dict(st.secrets["connections"]["gsheets"])
-            if "private_key" in creds_dict:
-                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-            credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-            client = gspread.authorize(credentials)
-            sh = client.open_by_key("1Y0pJANMQxuW_HTS6__Td69fJYvyfyeOyX0thC1CpzlA")
-            return sh
-        except Exception: return None
-
-    sh = get_db()
-    if not sh:
-        st.error("Error de conexión con la base de datos."); st.stop()
-
-    ws_p = sh.worksheet("Pedidos")
-    ws_i = sh.worksheet("Inventario")
-
-    with st.sidebar:
-        st.title("NOVA OS")
-        menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📝 GESTIÓN PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"])
-        authenticator.logout('Cerrar Sesión', 'sidebar')
+            st.warning("Complete los campos para registrar un nuevo usuario.")
 
     # --- DASHBOARD ---
     if menu == "📊 DASHBOARD":
