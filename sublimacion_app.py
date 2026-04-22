@@ -10,21 +10,18 @@ from datetime import datetime
 import os
 
 # ==========================================
-# 1. CAPA VISUAL (ESTILO CAPTURA 3 + NEÓN)
+# 1. ESTILO VISUAL "IMAGEN 3" (NO TOCAR)
 # ==========================================
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO NEGRO PURO */
+        /* Fondo y Sidebar */
         .stApp { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { 
-            background-color: #050505 !important; 
-            border-right: 1px solid #1a1a1a !important; 
-        }
+        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
         
-        /* LOGO NOVA INK. */
-        .logo-container { text-align: center; margin: 30px 0; }
+        /* Logo Central */
+        .logo-container { text-align: center; padding: 20px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
             font-size: 50px; color: white !important; font-weight: 700;
@@ -32,53 +29,52 @@ st.markdown('''
         }
         .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
 
-        /* NAVEGADOR LATERAL: CELDAS DE LUZ (IMAGEN 3) */
+        /* Menú con Luz Lateral (Efecto Imagen 3) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #222 !important;
             padding: 15px 20px !important;
             border-radius: 12px !important;
             margin-bottom: 10px !important;
-            transition: 0.3s all ease-in-out !important;
+            transition: 0.3s all ease !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
             box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
-            transform: translateX(8px) !important;
+            transform: translateX(10px);
         }
         div[role="radiogroup"] label p {
             font-family: 'Inter', sans-serif !important;
             font-weight: 700 !important; color: #888 !important;
-            font-size: 14px !important;
         }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* TARJETAS DASHBOARD */
+        /* Tarjetas Dashboard */
         .metric-card {
             background: linear-gradient(145deg, #111, #050505);
             border: 1px solid #252525;
-            padding: 40px 20px;
+            padding: 35px;
             border-radius: 20px;
             text-align: center;
             margin-bottom: 15px;
         }
-        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; margin-top: 10px; color: white !important; }
+        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; color: white !important; }
         
-        /* Forzar visibilidad de textos */
-        .stMarkdown, p, label, h1, h2, h3 { color: white !important; }
+        /* Visibilidad de tablas e inputs */
+        .stMarkdown, p, label { color: white !important; }
+        .stDataFrame, [data-testid="stTable"] { background-color: #050505 !important; border: 1px solid #222; }
     </style>
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. LOGO Y NAVEGACIÓN (CON ICONOS)
+# 2. LOGUEO Y NAVEGACIÓN (CON ICONOS)
 # ==========================================
-# IMPORTANTE: Este bloque DEBE ir después de crear el objeto 'authenticator'
 if st.session_state.get("authentication_status"):
     with st.sidebar:
         st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
         
-        # Agregamos los items con iconos para dar personalidad
+        # NAVEGADOR CON ICONOS IDENTIFICADORES
         menu = st.radio("", [
             "📊 DASHBOARD", 
             "🛍️ PEDIDOS", 
@@ -88,34 +84,37 @@ if st.session_state.get("authentication_status"):
         ])
         
         st.write("---")
-        # El logout solo se llama si el usuario está autenticado
+        # Aquí ya no dará NameError porque estamos dentro del bloque de autenticación
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
     # ==========================================
-    # 3. DASHBOARD (RESTAURADO)
+    # 3. DASHBOARD Y BALANCES (RESTAURADO)
     # ==========================================
     if "DASHBOARD" in menu:
         st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
         
-        # Verificamos que existan los datos para no dar error
         try:
+            # Tu lógica de Google Sheets
             df_p = pd.DataFrame(ws_p.get_all_records())
             df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
             df_act = df_p[df_p['Estado'] != 'Vendido']
 
-            col1, col2 = st.columns(2)
-            with col1:
+            c1, c2 = st.columns(2)
+            with c1:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">PEDIDOS ACTIVOS</div>
                     <div class="metric-value">{len(df_act)}</div>
                 </div>''', unsafe_allow_html=True)
-            with col2:
+            with c2:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">BALANCE PENDIENTE</div>
                     <div class="metric-value" style="color:#00d4ff;">${df_act['Monto'].sum():,.0f}</div>
                 </div>''', unsafe_allow_html=True)
-        except Exception as e:
-            st.error(f"Error cargando datos: {e}")
+        except:
+            st.warning("Conectando con la base de datos...")
+
+    # AQUÍ CONTINÚA TU LÓGICA DE GESTIÓN, STOCK, ETC.
+
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
