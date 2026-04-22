@@ -68,7 +68,7 @@ if st.session_state.get("authentication_status") is not True:
                     with open("config_pro.yaml", 'w') as f: yaml.dump(config, f, default_flow_style=False)
                     st.success("✅ Usuario creado."); time.sleep(1); st.rerun()
 
-# --- 4. APLICACIÓN PRINCIPAL ---
+# --- 4. APLICACIÓN PRINCIPAL (REEMPLAZAR TODO LO QUE SIGUE) ---
 elif st.session_state["authentication_status"]:
     @st.cache_resource
     def get_sh_conn():
@@ -95,44 +95,43 @@ elif st.session_state["authentication_status"]:
             
             menu = st.radio("", ["📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"], key="nav_nova_ink")
 
-        # --- SECCIÓN DASHBOARD (CON SOLUCIÓN PARA VER PEDIDOS) ---
-        if "DASHBOARD" in menu:
+        # --- SECCIÓN DASHBOARD ---
+        if "📊 DASHBOARD" in menu:
             try:
                 df_p = pd.DataFrame(ws_p.get_all_records())
-                # Filtramos los que NO están vendidos (Producción, Pendientes, etc.)
+                # Solo los que están en proceso
                 df_act = df_p[df_p['Estado'] != 'Vendido'] if not df_p.empty else pd.DataFrame()
+                # BALANCE: Solo sumamos lo que YA SE VENDIÓ
+                df_vendidos = df_p[df_p['Estado'] == 'Vendido'] if not df_p.empty else pd.DataFrame()
+                v_monto = pd.to_numeric(df_vendidos['Monto'], errors='coerce').sum()
                 v_pedidos = len(df_act)
-                v_monto = pd.to_numeric(df_act['Monto'], errors='coerce').sum()
             except:
                 v_pedidos, v_monto, df_act = 0, 0, pd.DataFrame()
 
             col1, col2 = st.columns(2)
             with col1:
                 st.write(f'''
-                    <div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
-                        <p style="color: #666 !important; font-family: 'Inter'; font-size: 11px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
+                    <div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;">
+                        <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
                         <h2 style="color: #FFFFFF !important; font-family: 'Orbitron'; font-size: 45px; margin: 10px 0 0 0;">{v_pedidos}</h2>
                     </div>
                 ''', unsafe_allow_html=True)
             with col2:
                 st.write(f'''
-                    <div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
-                        <p style="color: #666 !important; font-family: 'Inter'; font-size: 11px; font-weight: bold; letter-spacing: 2px; margin: 0;">BALANCE PENDIENTE</p>
+                    <div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;">
+                        <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">VENTAS REALIZADAS</p>
                         <h2 style="color: #00d4ff !important; font-family: 'Orbitron'; font-size: 45px; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
                     </div>
                 ''', unsafe_allow_html=True)
             
             st.write("### 🔍 DETALLE DE PEDIDOS EN CURSO")
-            if not df_act.empty:
-                # Mostramos la tabla para saber qué pidieron
-                st.dataframe(df_act, use_container_width=True)
-            else:
-                st.info("No hay pedidos activos para mostrar.")
+            st.dataframe(df_act, use_container_width=True)
 
         # --- SECCIÓN PEDIDOS ---
-        elif "PEDIDOS" in menu:
+        elif "🛍️ PEDIDOS" in menu:
             tab1, tab2 = st.tabs(["NUEVO PEDIDO", "MODIFICAR EXISTENTE"])
             df_inv = pd.DataFrame(ws_i.get_all_records())
+            
             with tab1:
                 with st.form("n_p"):
                     c1, c2 = st.columns(2)
@@ -144,17 +143,27 @@ elif st.session_state["authentication_status"]:
                     if st.form_submit_button("REGISTRAR"):
                         idx = df_inv[df_inv['Nombre'] == mat].index[0]
                         ws_i.update_cell(idx+2, 6, float(df_inv.at[idx, 'Cantidad']) - can)
-                        # Se registra con estado "Producción"
                         ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, det, mon, "Producción", 0, pago])
                         st.success("Registrado."); st.rerun()
             
             with tab2:
                 df_p = pd.DataFrame(ws_p.get_all_records())
                 if not df_p.empty:
-                    sel = st.selectbox("Seleccionar Pedido para modificar", df_p['Cliente'] + " - " + df_p['Producto'])
+                    # Buscamos por cliente y producto
+                    opciones = [f"{i+2} | {row['Cliente']} - {row['Producto']}" for i, row in df_p.iterrows() if row['Estado'] != 'Vendido']
+                    sel = st.selectbox("Seleccionar Pedido Activo", opciones)
+                    if sel:
+                        fila = int(sel.split(" | ")[0])
+                        with st.form("mod_p"):
+                            nuevo_est = st.selectbox("Estado", ["Producción", "Pendiente", "Vendido"])
+                            nuevo_pag = st.selectbox("Pago", ["No Pago", "Seña", "Pagado Total"])
+                            if st.form_submit_button("ACTUALIZAR"):
+                                ws_p.update_cell(fila, 7, nuevo_est) # Columna Estado
+                                ws_p.update_cell(fila, 9, nuevo_pag) # Columna Pago
+                                st.success("¡Pedido Actualizado!"); time.sleep(1); st.rerun()
 
         # --- SECCIÓN STOCK ---
-        elif "STOCK" in menu:
+        elif "📦 STOCK" in menu:
             df_st = pd.DataFrame(ws_i.get_all_records())
             st.dataframe(df_st, use_container_width=True)
             with st.expander("➕ AGREGAR MATERIAL"):
@@ -166,18 +175,14 @@ elif st.session_state["authentication_status"]:
                         ws_i.append_row([cat, nom, tip, tal, col, can, uni]); st.rerun()
 
         # --- SECCIÓN HISTORIAL ---
-        elif "HISTORIAL" in menu:
+        elif "📜 HISTORIAL" in menu:
             df_h = pd.DataFrame(ws_p.get_all_records())
             if not df_h.empty:
-                st.write("### ✅ Ventas Finalizadas (Vendidos)")
-                df_v = df_h[df_h['Estado'] == 'Vendido']
-                st.table(df_v)
-                
-                st.write("### 🛠️ Todos los Registros (Log)")
-                st.dataframe(df_h, use_container_width=True)
+                st.write("### ✅ Ventas Finalizadas")
+                st.table(df_h[df_h['Estado'] == 'Vendido'])
 
         # --- SECCIÓN COTIZADOR ---
-        elif "COTIZADOR" in menu:
+        elif "💰 COTIZADOR" in menu:
             c1, c2 = st.columns(2)
             ins, hrs, v_h = c1.number_input("Insumos $"), c1.number_input("Horas"), c1.number_input("Valor Hora $", 2000.0)
             mrg = c2.slider("% Ganancia", 0, 400, 100)
