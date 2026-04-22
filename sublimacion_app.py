@@ -21,7 +21,7 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. AUTENTICACIÓN ---
+# --- 2. CONFIGURACIÓN DE ACCESO ---
 def load_config():
     if not os.path.exists("config_pro.yaml"):
         initial_config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_auth'}}
@@ -42,22 +42,26 @@ if st.session_state.get("authentication_status") is not True:
             with open("config_pro.yaml", 'w') as f: yaml.dump(config, f, default_flow_style=False)
             st.success('Registrado correctamente.')
 
-# --- 3. CONEXIÓN Y LÓGICA ---
+# --- 3. CONEXIÓN A GOOGLE SHEETS ---
 else:
     @st.cache_resource
     def get_db():
         try:
             scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-            creds = dict(st.secrets["connections"]["gsheets"])
-            creds["private_key"] = creds["private_key"].replace("\\n", "\n")
-            client = gspread.authorize(Credentials.from_service_account_info(creds, scopes=scope))
-            sh = client.open_by_key("11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8")
+            creds_dict = dict(st.secrets["connections"]["gsheets"])
+            if "private_key" in creds_dict:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+            client = gspread.authorize(credentials)
+            # USANDO TU NUEVO ID AQUÍ:
+            sh = client.open_by_key("1Y0pJANMQxuW_HTS6__Td69fJYvyfyeOyX0thC1CpzlA")
             return sh
-        except Exception as e: return None
+        except Exception: 
+            return None
 
     sh = get_db()
     if not sh:
-        st.error("Error de conexión. Verifique permisos en Google Sheets."); st.stop()
+        st.error("Error de conexión. Verifica permisos del bot y el ID del Excel."); st.stop()
 
     ws_p = sh.worksheet("Pedidos")
     ws_i = sh.worksheet("Inventario")
@@ -67,124 +71,101 @@ else:
         menu = st.radio("NAVEGACIÓN", ["📊 DASHBOARD", "📝 GESTIÓN PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"])
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    # --- DASHBOARD (SOLO PENDIENTES) ---
+    # --- 4. DASHBOARD (SOLO PENDIENTES) ---
     if menu == "📊 DASHBOARD":
         data = ws_p.get_all_records()
         df_all = pd.DataFrame(data)
         if not df_all.empty:
             df_all['Monto'] = pd.to_numeric(df_all['Monto'], errors='coerce').fillna(0)
-            df_all['Gasto_Prod'] = pd.to_numeric(df_all['Gasto_Prod'], errors='coerce').fillna(0)
-            
-            # Filtrar solo Pendientes/Listo (No Vendidos) para el Dashboard activo
             df_active = df_all[df_all['Estado'] != 'Vendido']
             
             c1, c2 = st.columns(2)
-            c1.metric("PEDIDOS EN CURSO", len(df_active))
-            c2.metric("CAPITAL PENDIENTE", f"${df_active['Monto'].sum():,.2f}")
+            c1.metric("PEDIDOS ACTIVOS", len(df_active))
+            c2.metric("POR COBRAR", f"${df_active['Monto'].sum():,.2f}")
 
             st.write("### ⚡ Acciones Rápidas")
             for i, r in df_active.iterrows():
                 with st.expander(f"🕒 {r['Estado']} | {r['Cliente']} - {r['Producto']}"):
-                    st.write(f"**Descripción:** {r['Detalle']}")
-                    if st.button(f"Marcar como VENDIDO", key=f"v_{i}"):
+                    st.write(f"**Nota:** {r['Detalle']}")
+                    if st.button(f"MARCAR COMO VENDIDO", key=f"v_{i}"):
                         ws_p.update_cell(i+2, 7, "Vendido")
-                        st.success("¡Vendido! Movido al historial."); time.sleep(1); st.rerun()
+                        st.success("Movido al historial."); time.sleep(1); st.rerun()
 
-    # --- GESTIÓN DE PEDIDOS (NUEVO Y EDICIÓN) ---
+    # --- 5. GESTIÓN PEDIDOS (NUEVO Y EDICIÓN) ---
     elif menu == "📝 GESTIÓN PEDIDOS":
-        tab1, tab2 = st.tabs(["NUEVO PEDIDO", "EDITAR REGISTRADOS"])
+        tab1, tab2 = st.tabs(["NUEVO PEDIDO", "MODIFICAR REGISTRADO"])
         df_inv = pd.DataFrame(ws_i.get_all_records())
         
         with tab1:
             with st.form("new_o"):
                 c1, c2 = st.columns(2)
                 cli = c1.text_input("Cliente")
-                prd = c1.text_input("Producto (Tipo)")
-                det = c2.text_area("Descripción detallada (Requerimientos)")
+                prd = c1.text_input("Tipo de Producto")
+                det = c2.text_area("Descripción/Insumos")
                 pago = c2.selectbox("Estado Pago", ["No Pago", "Seña", "Pagado Total"])
-                
                 mon = st.number_input("Precio Final $")
-                mat = st.selectbox("Insumo principal", df_inv['Nombre'].tolist() if not df_inv.empty else [])
-                can = st.number_input("Cantidad a descontar del stock", min_value=0.0)
+                mat = st.selectbox("Insumo a descontar", df_inv['Nombre'].tolist() if not df_inv.empty else [])
+                can = st.number_input("Cantidad a restar", min_value=0.0)
                 
-                if st.form_submit_button("REGISTRAR Y DESCONTAR"):
-                    # Descuento Stock
+                if st.form_submit_button("REGISTRAR PEDIDO"):
+                    # Restar Stock
                     idx = df_inv[df_inv['Nombre'] == mat].index[0]
                     ws_i.update_cell(idx+2, 6, float(df_inv.at[idx, 'Cantidad']) - can)
-                    # Registro Pedido
+                    # Guardar Pedido
                     ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, det, mon, "Producción", 0, pago])
-                    st.success("Pedido registrado."); st.rerun()
+                    st.success("Registrado."); st.rerun()
 
         with tab2:
-            data_edit = ws_p.get_all_records()
-            df_edit = pd.DataFrame(data_edit)
+            df_edit = pd.DataFrame(ws_p.get_all_records())
             if not df_edit.empty:
-                sel_p = st.selectbox("Seleccionar pedido para modificar", df_edit['Cliente'] + " - " + df_edit['Producto'])
-                idx_e = df_edit[df_edit['Cliente'] + " - " + df_edit['Producto'] == sel_p].index[0]
-                row = df_edit.iloc[idx_e]
-                
-                with st.form("edit_form"):
-                    u_det = st.text_area("Modificar descripción", value=row['Detalle'])
-                    u_mon = st.number_input("Ajustar Precio $", value=float(row['Monto']))
-                    u_pag = st.selectbox("Actualizar Pago", ["No Pago", "Seña", "Pagado Total"], index=["No Pago", "Seña", "Pagado Total"].index(row['Notas'] if row['Notas'] in ["No Pago", "Seña", "Pagado Total"] else "No Pago"))
-                    if st.form_submit_button("GUARDAR CAMBIOS"):
+                sel = st.selectbox("Elegir pedido", df_edit['Cliente'] + " - " + df_edit['Producto'])
+                idx_e = df_edit[df_edit['Cliente'] + " - " + df_edit['Producto'] == sel].index[0]
+                r_edit = df_edit.iloc[idx_e]
+                with st.form("e_f"):
+                    u_det = st.text_area("Editar Descripción", value=r_edit['Detalle'])
+                    u_mon = st.number_input("Editar Precio $", value=float(r_edit['Monto']))
+                    u_pag = st.selectbox("Estado Pago", ["No Pago", "Seña", "Pagado Total"], index=0)
+                    if st.form_submit_button("ACTUALIZAR DATOS"):
                         ws_p.update_cell(idx_e+2, 5, u_det)
                         ws_p.update_cell(idx_e+2, 6, u_mon)
                         ws_p.update_cell(idx_e+2, 9, u_pag)
-                        st.success("Cambios guardados."); st.rerun()
+                        st.success("Actualizado."); st.rerun()
 
-    # --- HISTORIAL MENSUAL ---
+    # --- 6. HISTORIAL POR MES ---
     elif menu == "📜 HISTORIAL":
         df_h = pd.DataFrame(ws_p.get_all_records())
         if not df_h.empty:
             df_h['Fecha'] = pd.to_datetime(df_h['Fecha'], format='%d/%m/%Y', errors='coerce')
             df_h['Mes'] = df_h['Fecha'].dt.strftime('%Y-%m')
-            
-            # Solo los vendidos para el historial de ventas
             df_v = df_h[df_h['Estado'] == 'Vendido'].copy()
             
-            meses = df_v['Mes'].unique()
-            mes_sel = st.selectbox("Seleccionar Mes de Registro", meses if len(meses)>0 else ["Sin registros"])
-            
-            if mes_sel != "Sin registros":
+            mes_sel = st.selectbox("Filtrar por Mes", df_v['Mes'].unique() if not df_v.empty else ["Sin ventas"])
+            if mes_sel != "Sin ventas":
                 df_mes = df_v[df_v['Mes'] == mes_sel]
-                st.write(f"### 📈 Balance {mes_sel}")
-                st.metric("TOTAL MES", f"${df_mes['Monto'].sum():,.2f}")
-                st.table(df_mes[['Fecha', 'Cliente', 'Producto', 'Monto']])
-        else:
-            st.info("No hay historial aún.")
+                st.metric(f"Ventas Netas de {mes_sel}", f"${df_mes['Monto'].sum():,.2f}")
+                st.table(df_mes[['Fecha', 'Cliente', 'Producto', 'Monto', 'Notas']])
 
-    # --- STOCK ---
+    # --- 7. STOCK ---
     elif menu == "📦 STOCK":
         df_st = pd.DataFrame(ws_i.get_all_records())
-        st.write("### Inventario Actual")
         st.dataframe(df_st, use_container_width=True)
-        with st.expander("➕ Cargar nuevo material/insumo"):
-            with st.form("st_add"):
-                c1, c2, c3 = st.columns(3)
-                cat = c1.text_input("Categoría")
-                nom = c1.text_input("Nombre Material")
-                can = c2.number_input("Cantidad Inicial")
-                uni = c2.text_input("Unidad (Mts/Un)")
-                if st.form_submit_button("Cargar Stock"):
-                    ws_i.append_row([cat, nom, "", "", "", can, uni])
-                    st.rerun()
+        with st.expander("➕ CARGAR NUEVO"):
+            with st.form("add_s"):
+                cat, nom = st.text_input("Categoría"), st.text_input("Material")
+                can, uni = st.number_input("Cantidad"), st.text_input("Unidad")
+                if st.form_submit_button("Cargar"):
+                    ws_i.append_row([cat, nom, "", "", "", can, uni]); st.rerun()
 
-    # --- COTIZADOR VARIABLE ---
+    # --- 8. COTIZADOR ---
     elif menu == "💰 COTIZADOR":
-        st.write("### 🧮 Cotizador Pro")
-        with st.container():
-            c1, c2 = st.columns(2)
-            costo_m = c1.number_input("Costo de Materiales $", min_value=0.0)
-            horas = c1.number_input("Horas de Trabajo", min_value=0.0)
-            val_h = c1.number_input("Valor Hora $", value=1000.0)
-            
-            envio = c2.number_input("Gasto de Envío/Logística $", min_value=0.0)
-            margen = c2.slider("% De Ganancia Deseada", 0, 300, 100)
-            
-            total_costo = costo_m + (horas * val_h) + envio
-            sugerido = total_costo * (1 + margen/100)
-            
-            st.divider()
-            st.title(f"Precio Sugerido: ${sugerido:,.2f}")
-            st.info(f"Costo base: ${total_costo:,.2f} | Ganancia neta: ${sugerido - total_costo:,.2f}")
+        c1, c2 = st.columns(2)
+        insumo = c1.number_input("Costo Insumos $")
+        horas = c1.number_input("Horas de Trabajo")
+        val_h = c1.number_input("Precio por Hora $", value=1500.0)
+        margen = c2.slider("% Ganancia", 0, 300, 100)
+        
+        base = insumo + (horas * val_h)
+        final = base * (1 + margen/100)
+        st.divider()
+        st.title(f"Sugerido: ${final:,.2f}")
+        st.info(f"Costo base: ${base:,.2f} | Ganancia: ${final - base:,.2f}")
