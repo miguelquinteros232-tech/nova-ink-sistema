@@ -12,80 +12,73 @@ import os
 # --- 1. CONFIGURACIÓN VISUAL: THE FLUX (FUERZA MÁXIMA) ---
 st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
+# --- 1. OVERRIDE TOTAL DE ESTILO: NOVA INK ELITE ---
 st.markdown('''
     <style>
-        /* 1. FONDO SOLID GRIS CARBÓN (Igual a tu captura) */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;600;800&display=swap');
+        /* 1. RESET Y FONDO (Forzar Negro Carbón) */
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+            background-color: #121212 !important;
+        }
 
-        .stApp, [data-testid="stHeader"], [data-testid="stSidebar"], .main {
-            background-color: #1a1a1a !important;
-            color: white !important;
+        /* 2. LOGO "NOVA INK." CON PUNTO AZUL */
+        /* Buscamos el elemento donde pones el título */
+        .main-logo {
             font-family: 'Inter', sans-serif !important;
-        }
-
-        /* 2. LOGO "NOVA INK." (Tipografía y estructura real) */
-        .main-logo { 
-            font-family: 'Orbitron', sans-serif; 
-            font-size: 55px; text-align: center; 
-            color: white; font-weight: 600; 
-            letter-spacing: -2px; margin-bottom: 25px;
-            text-transform: capitalize; /* "Nova Ink" */
-        }
-        .main-logo::after { content: "."; color: #00acc1; } /* El punto azul */
-
-        /* 3. MÉTRICAS (Igual al Dashboard) - Sólido con borde fino gray */
-        div[data-testid="metric-container"] {
-            background: #252525 !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 8px !important;
-            padding: 20px !important;
-        }
-
-        /* 4. BOTONES: SÓLIDOS Y PROFESIONALES */
-        div.stButton > button {
-            background-color: transparent !important;
+            font-weight: 800 !important;
+            font-size: 50px !important;
             color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            border-radius: 6px !important;
-            transition: all 0.3s ease !important;
-            font-weight: bold !important;
+            text-align: center;
+            letter-spacing: -2px;
+            margin-bottom: 30px;
         }
-        div.stButton > button:hover {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            border-color: white !important;
+        .main-logo span { color: #00acc1 !important; } /* Para el punto azul */
+
+        /* 3. SIDEBAR (MENÚ LATERAL) */
+        [data-testid="stSidebar"] {
+            background-color: #0f0f0f !important;
+            border-right: 1px solid rgba(255,255,255,0.1) !important;
         }
 
-        /* 5. SIDEBAR (MENÚ LATERAL) - Fondo sólido carbón */
-        section[data-testid="stSidebar"] {
-            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-        }
-        
-        /* Estilo de las opciones del menú que se iluminan suave */
+        /* 4. REGLA DE ORO: ILUMINACIÓN EN TODO EL SISTEMA */
+        /* Seleccionamos botones, tarjetas, inputs y opciones de menú */
+        div[data-testid="metric-container"], 
+        .stButton button, 
+        [data-testid="stExpander"],
         div[role="radiogroup"] label {
+            background-color: #1e1e1e !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
             transition: all 0.3s ease !important;
-            padding: 10px !important;
-            border-radius: 5px !important;
-        }
-        
-        div[role="radiogroup"] label:hover {
-            background: rgba(0, 172, 193, 0.15) !important; /* Cian oscuro suave */
-            color: #ffffff !important;
         }
 
-        /* 6. TABLAS Y DATAFRAMES */
-        .stDataFrame, div[data-testid="stTable"] {
-            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        /* EFECTO HOVER (El brillo que buscabas) */
+        div[data-testid="metric-container"]:hover, 
+        .stButton button:hover, 
+        [data-testid="stExpander"]:hover,
+        div[role="radiogroup"] label:hover {
+            border-color: #00acc1 !important;
+            box-shadow: 0px 0px 15px rgba(0, 172, 193, 0.4) !important;
+            background-color: rgba(0, 172, 193, 0.05) !important;
+        }
+
+        /* 5. TABLAS (STOCK E HISTORIAL) */
+        [data-testid="stDataFrame"] {
+            border: 1px solid rgba(255,255,255,0.1) !important;
             border-radius: 8px !important;
         }
 
-        /* 7. INPUTS (FORMULARIOS) - Sólido oscuro */
-        input, select, textarea, div[data-baseweb="select"] > div {
-            background-color: #2a2a2a !important;
+        /* 6. CORRECCIÓN DE TEXTO EN EL MENÚ */
+        [data-testid="stSidebar"] .stRadio label p {
+            color: #aaaaaa !important;
+            font-weight: 500 !important;
+        }
+        [data-testid="stSidebar"] .stRadio label:hover p {
             color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
     </style>
 ''', unsafe_allow_html=True)
+
+# --- 2. CÓMO ESCRIBIR EL LOGO PARA QUE FUNCIONE EL CSS ---
+st.markdown('<h1 class="main-logo">NOVA INK<span>.</span></h1>', unsafe_allow_html=True)
 
 # --- 2. CONFIGURACIÓN DE USUARIOS ---
 def load_config():
