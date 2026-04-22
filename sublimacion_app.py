@@ -13,27 +13,40 @@ import streamlit as st
 import pandas as pd
 
 # ==========================================
-# 1. ESTILOS DE INTERFAZ (LOGOS Y COLORES)
+# 1. ESTILOS GLOBALES (INICIO DEL BLOQUE)
 # ==========================================
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
+
+        /* Fondo Negro y Sidebar Estilo Captura 3 */
         .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
+        [data-testid="stSidebar"] { 
+            background-color: #050505 !important; 
+            border-right: 1px solid #1a1a1a !important; 
+        }
+
+        /* Texto Blanco y Estilos de Menú */
         h1, h2, h3, p, span, label, div { color: white !important; }
         div[role="radiogroup"] label {
-            background: #0d0d0d !important; border: 1px solid #1a1a1a !important;
-            padding: 15px 20px !important; border-radius: 12px !important; margin-bottom: 10px !important;
+            background: #0d0d0d !important;
+            border: 1px solid #1a1a1a !important;
+            padding: 15px 20px !important;
+            border-radius: 12px !important;
+            margin-bottom: 10px !important;
         }
-        div[role="radiogroup"] label:hover { border-color: #00d4ff !important; transform: translateX(5px); }
+        div[role="radiogroup"] label:hover {
+            border-color: #00d4ff !important;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
     </style>
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. SIDEBAR Y LOGO (LÍNEA 175 CORREGIDA)
+# 2. SIDEBAR Y LOGO (EL "PUTO" LOGO)
 # ==========================================
 with st.sidebar:
-    # EL LOGO CON EFECTO NEÓN (Indentado con 4 espacios exactos)
+    # Este bloque DEBE estar indentado (4 espacios)
     st.write(f'''
         <div style="text-align: center; margin: 20px 0 40px 0;">
             <h1 style="
@@ -46,43 +59,46 @@ with st.sidebar:
         </div>
     ''', unsafe_allow_html=True)
     
-    # Menú Único
+    # Tu menú de navegación único
     menu = st.radio("", [
         "📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"
     ], key="nav_nova_ink_final")
 
 # ==========================================
-# 3. DASHBOARD CON CEROS (OBLIGATORIOS)
+# 3. DASHBOARD (CEROS Y BALANCES)
 # ==========================================
 if "DASHBOARD" in menu:
-    # Definimos ceros por defecto para que las tarjetas nunca desaparezcan
-    v_pedidos = 0
-    v_monto = 0.0
+    # LOGICA: Inicializamos en 0 por si no hay nada cargado aún
+    cant_actual = 0
+    monto_actual = 0.0
 
+    # Aquí se conectaría con tu lógica de df_act
     try:
-        # Aquí iría tu lógica para cargar df_act de Google Sheets
         if 'df_act' in locals() and not df_act.empty:
-            v_pedidos = len(df_act)
-            v_monto = df_act['Monto'].sum()
+            cant_actual = len(df_act)
+            monto_actual = df_act['Monto'].sum()
     except:
         pass
 
-    # Renderizado de Tarjetas
+    # Visual de las tarjetas
     col1, col2 = st.columns(2)
     with col1:
         st.write(f'''
             <div style="background: linear-gradient(145deg, #111, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
                 <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
-                <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: white !important; margin: 10px 0 0 0;">{v_pedidos}</h2>
+                <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: white !important; margin: 10px 0 0 0;">{cant_actual}</h2>
             </div>
         ''', unsafe_allow_html=True)
     with col2:
         st.write(f'''
             <div style="background: linear-gradient(145deg, #111, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
                 <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">BALANCE PENDIENTE</p>
-                <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: #00d4ff !important; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
+                <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: #00d4ff !important; margin: 10px 0 0 0;">${monto_actual:,.0f}</h2>
             </div>
         ''', unsafe_allow_html=True)
+    
+    st.write("---")
+
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
