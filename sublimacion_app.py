@@ -14,88 +14,90 @@ st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 st.markdown('''
     <style>
-        /* 1. FUENTES Y FONDO DE LUJO */
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Inter:wght@400;700&display=swap');
+        /* 1. FONDO INDUSTRIAL METÁLICO */
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;500;800&display=swap');
 
         .stApp {
-            background: linear-gradient(135deg, #0f172a 0%, #020617 100%) !important;
-            color: #f1f5f9 !important;
+            background: linear-gradient(180deg, #121212 0%, #1a1a1a 100%) !important;
+            color: #e0e0e0 !important;
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* 2. LOGO ESTILO AGENCIA */
+        /* 2. LOGO ESTILO TITANIO */
         .main-logo { 
-            font-family: 'Outfit', sans-serif; 
+            font-family: 'Syncopate', sans-serif; 
             font-size: 50px; text-align: center; 
-            color: #ffffff; font-weight: 600; 
-            letter-spacing: 4px; margin-bottom: 40px;
+            color: #ffffff; font-weight: 700; 
+            letter-spacing: 10px; margin-bottom: 40px;
             text-transform: uppercase;
-            text-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+            filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.8));
         }
-        .main-logo::after { content: "™"; font-size: 15px; vertical-align: top; color: #38bdf8; }
 
-        /* 3. TARJETAS DE CRISTAL (Métricas) */
-        div[data-testid="metric-container"] {
-            background: rgba(255, 255, 255, 0.03) !important;
-            backdrop-filter: blur(10px) !important;
+        /* 3. ILUMINACIÓN TOTAL: ESTA REGLA AFECTA A TODO EL SISTEMA */
+        /* Tarjetas, Botones, Menús y Formularios se iluminan al pasar el mouse */
+        
+        div[data-testid="metric-container"], 
+        div.stButton > button, 
+        div[data-testid="stExpander"], 
+        .stSelectbox div, 
+        .stTextInput input,
+        section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 16px !important;
-            padding: 25px !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+            background: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        /* EFECTO DE ILUMINACIÓN GLOBAL (HOVER) */
+        div[data-testid="metric-container"]:hover, 
+        div.stButton > button:hover, 
+        div[data-testid="stExpander"]:hover,
+        .stTextInput input:hover,
+        .stSelectbox div:hover {
+            border-color: #00f2ff !important; /* Cian Glaciar */
+            box-shadow: 0px 0px 20px rgba(0, 242, 255, 0.4) !important;
+            background: rgba(0, 242, 255, 0.05) !important;
+            transform: scale(1.01);
+        }
+
+        /* 4. BOTONES ESPECÍFICOS */
+        div.stButton > button {
+            border-radius: 4px !important;
+            text-transform: uppercase;
+            font-weight: 800 !important;
+            letter-spacing: 2px;
+        }
+
+        /* 5. MÉTRICAS (Igual al Dashboard) */
+        div[data-testid="metric-container"] {
+            border-radius: 0px !important; /* Estilo industrial cuadrado */
+            border-left: 4px solid #ffffff !important;
+            padding: 20px !important;
+        }
+
+        /* 6. MENÚ LATERAL (Opciones que se iluminan) */
+        [data-testid="stSidebar"] {
+            background-color: #0f0f0f !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Hacer que las opciones del radio button se iluminen */
+        div[role="radiogroup"] label {
+            padding: 10px !important;
+            border-radius: 5px !important;
+            margin-bottom: 5px !important;
+            width: 100% !important;
         }
         
-        [data-testid="stMetricValue"] > div { 
-            color: #38bdf8 !important; 
-            font-size: 32px !important; 
-            font-weight: 700 !important;
+        div[role="radiogroup"] label:hover {
+            background: rgba(0, 242, 255, 0.1) !important;
+            color: #00f2ff !important;
         }
 
-        /* 4. BOTONES: ACABADO METÁLICO E ILUMINACIÓN */
-        div.stButton > button {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-            color: #f1f5f9 !important;
+        /* 7. FORMULARIOS */
+        div[data-testid="stForm"] {
+            background: transparent !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 12px !important;
-            padding: 12px 24px !important;
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 600 !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease !important;
-        }
-
-        div.stButton > button:hover {
-            border-color: #38bdf8 !important;
-            box-shadow: 0px 0px 20px rgba(56, 189, 248, 0.4) !important;
-            transform: translateY(-2px);
-            color: #38bdf8 !important;
-        }
-
-        /* 5. FORMULARIOS E INPUTS PROFESIONALES */
-        input, textarea, select {
-            background-color: rgba(15, 23, 42, 0.8) !important;
-            color: #ffffff !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 10px !important;
-            padding: 12px !important;
-        }
-
-        input:focus {
-            border-color: #38bdf8 !important;
-            background-color: #0f172a !important;
-        }
-
-        /* 6. SIDEBAR (Elegancia Nocturna) */
-        [data-testid="stSidebar"] {
-            background-color: #020617 !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-        }
-
-        /* 7. EXPANDERS (Bordes de precisión) */
-        div[data-testid="stExpander"] {
-            background: rgba(255, 255, 255, 0.02) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            border-radius: 12px !important;
+            padding: 30px !important;
         }
     </style>
 ''', unsafe_allow_html=True)
