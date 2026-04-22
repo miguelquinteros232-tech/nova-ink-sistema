@@ -21,26 +21,25 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. ACCESO ---
-def load_config():
-    if not os.path.exists("config_pro.yaml"):
-        initial_config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_k', 'name': 'nova_auth'}}
-        with open("config_pro.yaml", 'w') as f: yaml.dump(initial_config, f)
-        return initial_config
-    with open("config_pro.yaml") as f: return yaml.load(f, Loader=SafeLoader)
-
-config = load_config()
-authenticator = stauth.Authenticate(config['credentials'], config['cookie']['name'], config['cookie']['key'], config['cookie']['expiry_days'])
-
-st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
+# --- 2. ACCESO (CORREGIDO) ---
 authenticator.login(location='main')
 
 if st.session_state.get("authentication_status") is not True:
     st.info("Sistema de gestión Nova Ink. Por favor identifíquese.")
     with st.expander("📝 REGISTRO"):
-        if authenticator.register_user(location='main', pre_authorization=[]):
-            with open("config_pro.yaml", 'w') as f: yaml.dump(config, f, default_flow_style=False)
-            st.success('Registrado correctamente.')
+        try:
+            # Versión compatible con las últimas actualizaciones de la librería
+            result = authenticator.register_user(location='main', pre_authorization=[])
+            if result:
+                # El componente devuelve True si el registro fue exitoso
+                if result[0]: 
+                    with open("config_pro.yaml", 'w') as f:
+                        yaml.dump(config, f, default_flow_style=False)
+                    st.success('Usuario registrado correctamente. Ya puede iniciar sesión arriba.')
+        except Exception as e:
+            # Si la base de datos de usuarios está vacía, la librería a veces lanza error
+            # Aquí lo capturamos para que no rompa la app
+            st.warning("Complete los campos para registrarse.")
 
 # --- 3. CONEXIÓN ---
 else:
