@@ -9,116 +9,117 @@ import time
 from datetime import datetime
 import os
 
-# 1. FORZAR EL TEMA OSCURO DE FONDO
-st.markdown('''
-    <style>
-        .stApp {
-            background-color: #1a1a1a !important;
-        }
-        /* Ocultar elementos innecesarios de Streamlit que ensucian el diseño */
-        #MainMenu, footer, header {visibility: hidden;}
-    </style>
-''', unsafe_allow_html=True)
+# 1. CONFIGURACIÓN DE PÁGINA Y FONDO SÓLIDO
+st.set_page_config(page_title="NOVA OS", layout="wide")
 
-# 2. EL LOGO "NOVA INK." CON EFECTOS VISUALES (Réplica Ejemplo 3)
 st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-        
-        .logo-container {
-            text-align: center;
-            padding: 40px 0;
-            background: #1a1a1a;
-        }
-        
+        /* Fondo Negro Carbón y ocultar basura de Streamlit */
+        .stApp { background-color: #1a1a1a !important; }
+        #MainMenu, footer, header { visibility: hidden; }
+
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
+
+        /* 2. LOGO "NOVA INK." CON EFECTOS (EJEMPLO 3) */
+        .logo-container { text-align: center; padding: 30px 0; background: #1a1a1a; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 60px;
+            font-size: 55px;
             color: white;
             letter-spacing: -2px;
-            position: relative;
             display: inline-block;
-            /* Efecto de resplandor suave detrás del texto */
-            text-shadow: 0 0 20px rgba(188, 57, 253, 0.2), 0 0 40px rgba(0, 212, 255, 0.1);
-            animation: breath 4s infinite ease-in-out;
+            text-shadow: 0 0 15px rgba(188, 57, 253, 0.2);
+            animation: breathe 4s infinite ease-in-out;
         }
-        
-        .logo-text span {
-            color: #00d4ff; /* El punto azul cian */
-            text-shadow: 0 0 15px #00d4ff;
-        }
-
-        @keyframes breath {
+        .logo-text span { color: #00d4ff; text-shadow: 0 0 15px #00d4ff; }
+        @keyframes breathe {
             0%, 100% { transform: scale(1); opacity: 0.9; }
-            50% { transform: scale(1.02); opacity: 1; text-shadow: 0 0 30px rgba(188, 57, 253, 0.4); }
+            50% { transform: scale(1.02); opacity: 1; text-shadow: 0 0 25px rgba(0, 212, 255, 0.3); }
         }
-    </style>
-    <div class="logo-container">
-        <div class="logo-text">NOVA INK<span>.</span></div>
-    </div>
-''', unsafe_allow_html=True)
 
-# 3. INTERFAZ REACTIVA PARA LAS OPCIONES (SIDEBAR)
-st.markdown('''
-    <style>
-        /* Estilo para que las opciones del menú se iluminen como en la imagen */
+        /* 3. MENÚ LATERAL: ILUMINACIÓN EN TODAS LAS OPCIONES */
         [data-testid="stSidebar"] {
             background-color: #151515 !important;
             border-right: 1px solid #333 !important;
         }
-        
-        /* Forzar que cada opción del radio button sea un bloque de luz */
+
+        /* Forzamos el iluminado de las opciones del menú (Radio Buttons) */
         div[role="radiogroup"] label {
             background: #222 !important;
             border: 1px solid #333 !important;
-            margin-bottom: 8px !important;
-            border-radius: 8px !important;
-            padding: 12px !important;
-            transition: 0.3s !important;
+            margin-bottom: 10px !important;
+            border-radius: 10px !important;
+            padding: 15px !important;
+            transition: 0.3s all ease !important;
+            cursor: pointer !important;
         }
-        
+
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3) !important;
-            background: #282828 !important;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
+            background: #2a2a2a !important;
+            transform: translateX(5px);
         }
-        
-        /* Color del texto del menú */
+
+        /* Texto de las opciones */
         div[role="radiogroup"] label p {
-            color: #ccc !important;
-            font-size: 14px !important;
+            color: #bbb !important;
+            font-family: 'Inter', sans-serif !important;
             font-weight: 600 !important;
+            font-size: 15px !important;
+        }
+
+        div[role="radiogroup"] label:hover p { color: white !important; }
+
+        /* 4. ESTILO DE TARJETAS PARA EL DASHBOARD */
+        .metric-card {
+            background: #252525;
+            border: 1px solid #333;
+            padding: 30px;
+            border-radius: 15px;
+            transition: 0.4s;
+            text-align: center;
+        }
+        .metric-card:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.25);
+            transform: translateY(-5px);
         }
     </style>
 ''', unsafe_allow_html=True)
 
-# 4. TARJETAS DEL DASHBOARD (El estilo de cuadros de la imagen)
-def metric_card(title, value):
-    st.markdown(f'''
-        <div style="
-            background: #252525;
-            border: 1px solid #333;
-            padding: 25px;
-            border-radius: 15px;
-            transition: 0.3s;
-            cursor: pointer;
-            margin-bottom: 20px;
-        " onmouseover="this.style.borderColor='#00d4ff'; this.style.boxShadow='0 0 20px rgba(0,212,255,0.2)';" 
-           onmouseout="this.style.borderColor='#333'; this.style.boxShadow='none';">
-            <p style="color: #888; font-size: 12px; margin: 0; font-family: sans-serif;">{title}</p>
-            <h2 style="color: white; margin: 5px 0 0 0; font-family: 'Orbitron', sans-serif;">{value}</h2>
-        </div>
-    ''', unsafe_allow_html=True)
+# --- CABECERA CON LOGO ---
+st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
 
-# Ejemplo de uso en el Dashboard
-col1, col2 = st.columns(2)
-with col1:
-    metric_card("PEDIDOS ACTIVOS", "15")
-with col2:
-    metric_card("POR COBRAR", "$2,500.00")
+# --- MENÚ LATERAL ---
+with st.sidebar:
+    st.markdown("<br>", unsafe_allow_html=True)
+    menu_opcion = st.radio(
+        "NAVEGACIÓN",
+        ["DASHBOARD", "PRODUCTOS Y PRECIOS", "STOCK", "NUEVO PEDIDO", "HISTORIAL", "MODIFICAR PEDIDO"]
+    )
 
-# --- 2. CÓMO ESCRIBIR EL LOGO PARA QUE FUNCIONE EL CSS ---
-st.markdown('<h1 class="main-logo">NOVA INK<span>.</span></h1>', unsafe_allow_html=True)
+# --- DASHBOARD: SÓLO PEDIDOS ACTIVOS Y BALANCE ---
+if menu_opcion == "DASHBOARD":
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('''
+            <div class="metric-card">
+                <p style="color: #888; font-size: 14px; margin-bottom: 5px; font-family: 'Inter';">PEDIDOS ACTIVOS</p>
+                <h1 style="color: white; margin: 0; font-family: 'Orbitron'; font-size: 45px;">15</h1>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+    with col2:
+        st.markdown('''
+            <div class="metric-card">
+                <p style="color: #888; font-size: 14px; margin-bottom: 5px; font-family: 'Inter';">BALANCE</p>
+                <h1 style="color: #00d4ff; margin: 0; font-family: 'Orbitron'; font-size: 45px;">$2,500.00</h1>
+            </div>
+        ''', unsafe_allow_html=True)
+
+    # Aquí puedes añadir el resto del contenido del Dashboard (tablas, etc.)
 
 # --- 2. CONFIGURACIÓN DE USUARIOS ---
 def load_config():
