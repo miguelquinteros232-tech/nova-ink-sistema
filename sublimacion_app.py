@@ -9,16 +9,18 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. BLOQUE CSS (ESTILO CAPTURA 3) ---
+# --- 1. CAPA VISUAL (ESTILO CAPTURA 3 + NEÓN) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO NEGRO Y TEXTO BLANCO */
+        /* FONDO NEGRO PURO */
         .stApp { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
-        .stMarkdown, p, label { color: #ffffff !important; }
-
+        [data-testid="stSidebar"] { 
+            background-color: #050505 !important; 
+            border-right: 1px solid #1a1a1a !important; 
+        }
+        
         /* LOGO NOVA INK. */
         .logo-container { text-align: center; margin: 30px 0; }
         .logo-text {
@@ -28,14 +30,14 @@ st.markdown('''
         }
         .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
 
-        /* MENÚ LATERAL CON LUZ CIAN (CAPTURA 3) */
+        /* NAVEGADOR LATERAL: CELDAS DE LUZ (IMAGEN 3) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #222 !important;
             padding: 15px 20px !important;
             border-radius: 12px !important;
             margin-bottom: 10px !important;
-            transition: 0.3s all ease !important;
+            transition: 0.3s all ease-in-out !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
@@ -45,30 +47,34 @@ st.markdown('''
         div[role="radiogroup"] label p {
             font-family: 'Inter', sans-serif !important;
             font-weight: 700 !important; color: #888 !important;
+            font-size: 14px !important;
         }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* TARJETAS DASHBOARD */
-        .glass-card {
+        /* TARJETAS DASHBOARD (BALANCES) */
+        .metric-card {
             background: linear-gradient(145deg, #111, #050505);
             border: 1px solid #252525;
-            padding: 30px;
+            padding: 40px 20px;
             border-radius: 20px;
             text-align: center;
             margin-bottom: 15px;
         }
-        .card-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
-        .card-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; }
+        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; margin-top: 10px; }
+        
+        /* Forzar textos blancos en el resto de la app */
+        .stMarkdown, p, label, h1, h2, h3 { color: white !important; }
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. VERIFICACIÓN DE LOGIN Y NAVEGADOR ---
-# Asegúrate de que este bloque esté después de definir 'authenticator'
+# --- 2. NAVEGACIÓN Y LOGUEO ---
+# IMPORTANTE: Asegúrate de que este bloque esté DEBAJO de donde creas el objeto 'authenticator'
 if st.session_state.get("authentication_status"):
     with st.sidebar:
         st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
         
-        # NAVEGADOR CON ICONOS (Items identificadores)
+        # NAVEGADOR CON ICONOS (Items personalizados)
         menu = st.radio("", [
             "📊 DASHBOARD", 
             "🛍️ PEDIDOS", 
@@ -78,26 +84,29 @@ if st.session_state.get("authentication_status"):
         ])
         
         st.write("---")
-        # El logout ahora está protegido dentro del IF para evitar el NameError
+        # Aquí se soluciona el NameError: solo se llama si el usuario está ok.
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    # --- 3. CONTENIDO DEL DASHBOARD (BALANCES) ---
+    # --- 3. CONTENIDO PRINCIPAL (DASHBOARD) ---
     if "DASHBOARD" in menu:
+        # El logo aparece centrado arriba
         st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
         
-        # Estas variables df_act deben venir de tu lógica de Google Sheets
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f'''<div class="glass-card">
-                <div class="card-label">PEDIDOS ACTIVOS</div>
-                <div class="card-value" style="color:white;">{len(df_act) if 'df_act' in locals() else 0}</div>
-            </div>''', unsafe_allow_html=True)
-        with col2:
-            balance = df_act['Monto'].sum() if 'df_act' in locals() else 0
-            st.markdown(f'''<div class="glass-card">
-                <div class="card-label">BALANCE PENDIENTE</div>
-                <div class="card-value" style="color:#00d4ff;">${balance:,.0f}</div>
-            </div>''', unsafe_allow_html=True)
+        # Usamos tus datos de Google Sheets (df_act)
+        if 'df_act' in locals() or 'df_act' in globals():
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f'''<div class="metric-card">
+                    <div class="metric-label">PEDIDOS ACTIVOS</div>
+                    <div class="metric-value" style="color:white;">{len(df_act)}</div>
+                </div>''', unsafe_allow_html=True)
+            with c2:
+                st.markdown(f'''<div class="metric-card">
+                    <div class="metric-label">BALANCE PENDIENTE</div>
+                    <div class="metric-value" style="color:#00d4ff;">${df_act['Monto'].sum():,.0f}</div>
+                </div>''', unsafe_allow_html=True)
+        else:
+            st.warning("Cargando datos del sistema...")
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
