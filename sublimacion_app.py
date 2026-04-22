@@ -9,34 +9,43 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. ESTILO VISUAL ÚNICO (Efectos de la Captura 3) ---
+import streamlit as st
+import pandas as pd
+
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="Nova Ink Sistema", layout="wide")
+
+# --- INYECCIÓN DE CSS TOTAL (FUERZA BRUTA) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO Y SIDEBAR */
-        .stApp { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
-        
-        /* LOGO NOVA INK CON NEÓN */
-        .logo-box {
-            text-align: center; margin: 10px 0 30px 0;
-            font-family: 'Orbitron', sans-serif; font-size: 35px; font-weight: 700;
-            color: #ffffff !important; text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
+        /* Fondo y Sidebar */
+        .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
+        [data-testid="stSidebar"] { 
+            background-color: #050505 !important; 
+            border-right: 1px solid #1a1a1a !important; 
         }
-        .logo-box span { color: #00d4ff !important; }
 
-        /* TARJETAS DEL DASHBOARD */
-        .metric-card {
-            background: linear-gradient(145deg, #0f0f0f, #050505);
-            border: 1px solid #222; padding: 25px;
-            border-radius: 20px; text-align: center; margin-bottom: 15px;
+        /* Texto General Forzado a Blanco */
+        h1, h2, h3, p, span, label, div { color: white !important; }
+
+        /* Estilo para los ítems del Menú */
+        div[role="radiogroup"] label {
+            background: #0d0d0d !important;
+            border: 1px solid #1a1a1a !important;
+            padding: 15px 20px !important;
+            border-radius: 12px !important;
+            margin-bottom: 10px !important;
+            transition: 0.3s all ease;
         }
-        .metric-label { color: #555 !important; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 40px; font-weight: 700; color: #ffffff !important; }
-        
-        /* FORZAR TODO EL TEXTO A BLANCO */
-        h1, h2, h3, p, label, span, .stMarkdown { color: #ffffff !important; }
+        div[role="radiogroup"] label:hover {
+            border-color: #00d4ff !important;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+            transform: translateX(5px);
+        }
+        div[role="radiogroup"] label p { font-weight: 700 !important; color: #888 !important; }
+        div[role="radiogroup"] label:hover p { color: white !important; }
     </style>
 ''', unsafe_allow_html=True)
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
