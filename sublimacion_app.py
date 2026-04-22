@@ -9,84 +9,106 @@ import time
 from datetime import datetime
 import os
 
+# --- BLOQUE VISUAL RECONSTRUIDO (ESTILO IMAGEN 3 + ICONOS) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* 1. FONDO NEGRO PURO */
+        /* 1. FONDO Y ESTRUCTURA */
         .stApp { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; }
-        
-        /* Forzar visibilidad de textos */
-        .stMarkdown, p, label, span { color: #ffffff !important; }
-
-        /* 2. LOGO NOVA INK (RESTAURADO) */
-        .logo-container { 
-            text-align: center; 
-            margin: 40px 0; 
-            display: block !important; 
+        [data-testid="stSidebar"] { 
+            background-color: #050505 !important; 
+            border-right: 1px solid #1a1a1a !important;
         }
+        
+        /* Forzar visibilidad de textos base */
+        .stMarkdown, p, label { color: #ffffff !important; }
+
+        /* 2. LOGO NOVA INK (CENTRAL Y BRILLANTE) */
+        .logo-container { text-align: center; margin: 40px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 55px; font-weight: 700;
-            color: #ffffff !important;
-            letter-spacing: 5px;
+            font-size: 55px; color: #ffffff !important; 
+            letter-spacing: 5px; font-weight: 700;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
         }
         .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
 
-        /* 3. NAVEGADOR CON BRILLO LATERAL (CAPTURA 3) */
+        /* 3. NAVEGADOR LATERAL CON ICONOS (EFECTO IMAGEN 3) */
         div[role="radiogroup"] label {
-            background: #111111 !important;
-            border: 1px solid #222222 !important;
-            padding: 15px 20px !important;
+            background: #0d0d0d !important;
+            border: 1px solid #222 !important;
+            padding: 18px 25px !important;
             border-radius: 12px !important;
             margin-bottom: 12px !important;
-            transition: 0.3s all ease-in-out !important;
+            transition: 0.4s all ease !important;
             display: flex !important;
-            align-items: center !important;
         }
-
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4) !important;
-            transform: translateX(10px); /* Efecto de desplazamiento */
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
+            transform: translateX(10px);
         }
-
-        /* Ocultar el círculo del radio para que parezca un botón */
-        div[role="radiogroup"] [data-testid="stWidgetLabel"] { display: none; }
-        div[role="radiogroup"] label [data-testid="stMarkdownContainer"] p {
+        div[role="radiogroup"] label p {
             font-family: 'Inter', sans-serif !important;
-            font-weight: 700 !important;
-            letter-spacing: 1px;
+            font-size: 15px !important; font-weight: 700 !important;
+            letter-spacing: 1px; color: #888 !important;
         }
+        div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* 4. DASHBOARD: TARJETAS DE BALANCE VISIBLES */
-        .metric-card {
-            background: linear-gradient(145deg, #151515, #050505) !important;
-            border: 1px solid #333333 !important;
-            padding: 35px !important;
-            border-radius: 20px !important;
-            text-align: center !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        /* 4. DASHBOARD: TARJETAS DE MÉTRICAS VISIBLES */
+        .glass-card {
+            background: linear-gradient(145deg, #111, #050505);
+            border: 1px solid #252525;
+            padding: 40px 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 15px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        
-        .metric-label {
-            color: #888888 !important;
-            font-size: 14px !important;
-            letter-spacing: 2px;
-            font-weight: 700;
-            text-transform: uppercase;
+        .card-label {
+            color: #666 !important; font-size: 13px;
+            font-weight: 700; letter-spacing: 3px; margin-bottom: 15px;
         }
-
-        .metric-value {
+        .card-value {
             font-family: 'Orbitron', sans-serif !important;
-            font-size: 50px !important;
-            font-weight: 700 !important;
-            margin-top: 10px !important;
+            font-size: 52px; font-weight: 700;
         }
     </style>
 ''', unsafe_allow_html=True)
+
+# --- APLICACIÓN DE LOGO Y NAVEGACIÓN ---
+if st.session_state.get("authentication_status"):
+    with st.sidebar:
+        # Espaciador superior
+        st.markdown('<div style="height: 30px;"></div>', unsafe_allow_html=True)
+        # NAVEGADOR CON ICONOS (Esto le da la personalidad que pediste)
+        menu = st.radio("", [
+            "🏠 DASHBOARD", 
+            "📈 PEDIDOS", 
+            "📦 INVENTARIO", 
+            "📜 HISTORIAL", 
+            "💎 COTIZADOR"
+        ])
+        st.write("---")
+        authenticator.logout('Cerrar Sesión', 'sidebar')
+
+    # --- LÓGICA DEL DASHBOARD (Para que aparezcan los balances) ---
+    if "DASHBOARD" in menu:
+        st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
+        
+        # Simulación de tus datos (Asegúrate de que df_p y df_act existan en tu código)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f'''<div class="glass-card">
+                <div class="card-label">PEDIDOS ACTIVOS</div>
+                <div class="card-value" style="color:#ffffff;">{len(df_act)}</div>
+            </div>''', unsafe_allow_html=True)
+        with col2:
+            st.markdown(f'''<div class="glass-card">
+                <div class="card-label">BALANCE TOTAL</div>
+                <div class="card-value" style="color:#00d4ff;">${df_act['Monto'].sum():,.0f}</div>
+            </div>''', unsafe_allow_html=True)
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
