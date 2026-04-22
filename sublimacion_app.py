@@ -14,24 +14,23 @@ import pandas as pd
 
 st.markdown('''
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
+        /* Fondo negro total */
+        .stApp { background-color: #000000 !important; }
+        [data-testid="stSidebar"] { background-color: #050505 !important; }
         
-        /* Fondo Negro y Sidebar */
-        .stApp, [data-testid="stHeader"] { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
-        
-        /* Estilo de los Items del Menú */
+        /* Botones del menú con luz azul lateral */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #1a1a1a !important;
-            padding: 15px 20px !important;
-            border-radius: 12px !important;
-            margin-bottom: 10px !important;
+            padding: 12px 20px !important;
+            border-radius: 10px !important;
+            margin-bottom: 8px !important;
         }
         div[role="radiogroup"] label:hover {
-            border-color: #00d4ff !important;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+            border-left: 5px solid #00d4ff !important;
+            background: #111 !important;
         }
+        div[role="radiogroup"] label p { color: white !important; font-weight: bold !important; }
     </style>
 ''', unsafe_allow_html=True)
 
@@ -91,30 +90,53 @@ elif st.session_state["authentication_status"]:
         ws_p = sh.worksheet("Pedidos"); ws_i = sh.worksheet("Inventario")
 
         with st.sidebar:
-            st.markdown(f"### Hola, {st.session_state['name']} 👋")
-            menu = st.radio("SISTEMA", ["DASHBOARD", "GESTIÓN PEDIDOS", "STOCK", "HISTORIAL", "COTIZADOR"])
-            st.write("---")
-            authenticator.logout('Cerrar Sesión', 'sidebar')
+    # Este bloque fuerza el logo con estilo neón directamente
+    st.write(f'''
+        <div style="text-align: center; padding: 20px 0; margin-bottom: 20px;">
+            <h1 style="
+                font-family: 'Orbitron', sans-serif; 
+                font-size: 38px; 
+                font-weight: 700;
+                color: #FFFFFF !important; 
+                text-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff;
+                margin: 0;
+            ">
+                NOVA INK<span style="color: #00d4ff !important;">.</span>
+            </h1>
+        </div>
+    ''', unsafe_allow_html=True)
+    
 
         # SECCIÓN DASHBOARD (Tus métricas pero con estilo de la imagen)
-        if menu == "DASHBOARD":
-            df_p = pd.DataFrame(ws_p.get_all_records())
-            if not df_p.empty:
-                df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
-                df_act = df_p[df_p['Estado'] != 'Vendido']
-                
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.markdown(f'<div class="glass-card"><p style="color:#888; font-size:12px;">PEDIDOS ACTIVOS</p><h1 style="color:white; font-family:Orbitron;">{len(df_act)}</h1></div>', unsafe_allow_html=True)
-                with c2:
-                    st.markdown(f'<div class="glass-card"><p style="color:#888; font-size:12px;">BALANCE PENDIENTE</p><h1 style="color:#bc39fd; font-family:Orbitron;">${df_act["Monto"].sum():,.0f}</h1></div>', unsafe_allow_html=True)
-                
-                st.write("---")
-                for i, r in df_act.iterrows():
-                    with st.expander(f"🕒 {r['Estado']} | {r['Cliente']} - {r['Producto']}"):
-                        st.write(f"**Detalle:** {r['Detalle']}")
-                        if st.button("FINALIZAR VENTA", key=f"f_{i}"):
-                            ws_p.update_cell(i+2, 7, "Vendido"); st.rerun()
+        if "DASHBOARD" in menu:
+    # 1. Lógica ultra-segura para los ceros
+    try:
+        # Reemplaza 'df_act' por tu variable real de pedidos activos
+        v_pedidos = len(df_act) if ('df_act' in locals() or 'df_act' in globals()) else 0
+        v_monto = df_act['Monto'].sum() if ('df_act' in locals() or 'df_act' in globals()) else 0
+    except:
+        v_pedidos, v_monto = 0, 0
+
+    # 2. Renderizado con Estilos Forzados (Inline)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write(f'''
+            <div style="background: #0d0d0d; border: 1px solid #222; padding: 30px; border-radius: 15px; text-align: center;">
+                <p style="color: #666 !important; font-family: sans-serif; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
+                <h2 style="color: #FFFFFF !important; font-family: 'Orbitron', sans-serif; font-size: 45px; margin: 10px 0 0 0;">{v_pedidos}</h2>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+    with col2:
+        st.write(f'''
+            <div style="background: #0d0d0d; border: 1px solid #222; padding: 30px; border-radius: 15px; text-align: center;">
+                <p style="color: #666 !important; font-family: sans-serif; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">BALANCE PENDIENTE</p>
+                <h2 style="color: #00d4ff !important; font-family: 'Orbitron', sans-serif; font-size: 45px; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
+            </div>
+        ''', unsafe_allow_html=True)
+    
+    st.write("---")
 
         # SECCIÓN GESTIÓN PEDIDOS (REPLICA EXACTA DE TUS TABS Y FORMULARIOS)
         elif menu == "GESTIÓN PEDIDOS":
