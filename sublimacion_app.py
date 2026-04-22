@@ -9,129 +9,138 @@ import time
 from datetime import datetime
 import os
 
-# 1. SETUP DE PÁGINA
+# 1. CONFIGURACIÓN E INYECCIÓN DE ESTILO (Réplica Exacta)
 st.set_page_config(page_title="NOVA OS", layout="wide")
 
-# 2. INYECCIÓN DE ESTILO "OVERDRIVE" (Réplica Ejemplo 3)
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO Y OCULTAR BASURA */
+        /* FONDO GENERAL Y LIMPIEZA */
         .stApp { background-color: #0a0a0a !important; }
         header, footer, #MainMenu { visibility: hidden; }
 
-        /* LOGO RESPIRABLE */
-        .logo-container { text-align: center; padding: 40px 0; }
+        /* LOGO CON EFECTO DE RESPIRACIÓN (EJEMPLO 3) */
+        .logo-container { text-align: center; padding: 30px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 60px;
+            font-size: 50px;
             color: white;
-            letter-spacing: -2px;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            animation: pulse 4s infinite ease-in-out;
+            letter-spacing: -1px;
+            animation: breathe 5s infinite ease-in-out;
         }
-        .logo-text span { color: #00d4ff; text-shadow: 0 0 20px #00d4ff; }
+        .logo-text span { color: #00d4ff; text-shadow: 0 0 15px #00d4ff; }
         
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.03); filter: brightness(1.3); text-shadow: 0 0 40px rgba(188, 57, 253, 0.5); }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); text-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
         }
 
-        /* SIDEBAR: ILUMINACIÓN TOTAL EN CADA OPCIÓN */
+        /* MENU LATERAL: ILUMINACIÓN ULTRA-REACTIVA */
         [data-testid="stSidebar"] {
             background-color: #0d0d0d !important;
             border-right: 1px solid #222 !important;
-            padding-top: 20px;
         }
 
-        /* Forzamos que cada opción del menú brille como el dashboard */
+        /* Ocultamos el widget de radio estándar para usar nuestro diseño */
+        div[role="radiogroup"] {
+            padding: 10px 0 !important;
+        }
+
         div[role="radiogroup"] label {
             background: #151515 !important;
             border: 1px solid #222 !important;
             margin-bottom: 12px !important;
             border-radius: 12px !important;
-            padding: 18px !important;
-            transition: 0.4s all cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            padding: 15px 20px !important;
+            transition: 0.4s all cubic-bezier(0.175, 0.885, 0.32, 1.1) !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
         }
 
+        /* EFECTO DE ILUMINACIÓN AL PASAR EL MOUSE (HOVER) */
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4) !important;
-            background: #1a1a1a !important;
-            transform: scale(1.05) translateX(10px);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
+            background: #1c1c1c !important;
+            transform: scale(1.02) translateX(8px);
         }
 
+        /* Estilo del texto de las opciones */
         div[role="radiogroup"] label p {
-            color: #888 !important;
+            color: #777 !important;
             font-family: 'Inter', sans-serif !important;
             font-weight: 700 !important;
-            font-size: 14px !important;
+            font-size: 13px !important;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin: 0 !important;
         }
 
-        div[role="radiogroup"] label:hover p { color: white !important; }
+        div[role="radiogroup"] label:hover p {
+            color: white !important;
+        }
 
-        /* TARJETAS DEL DASHBOARD (DISEÑO EJEMPLO 3) */
-        .glass-card {
-            background: linear-gradient(145deg, #151515, #050505);
+        /* TARJETAS DEL DASHBOARD (DISEÑO PREMIUM) */
+        .dashboard-card {
+            background: linear-gradient(145deg, #181818, #0c0c0c);
             border: 1px solid #222;
-            padding: 40px;
+            padding: 35px;
             border-radius: 20px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
             transition: 0.5s ease;
+            position: relative;
         }
 
-        .glass-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 4px;
-            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-            opacity: 0.3;
-        }
-
-        .glass-card:hover {
+        .dashboard-card:hover {
             border-color: #00d4ff;
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.2);
-            transform: translateY(-10px);
+            box-shadow: 0 0 35px rgba(0, 212, 255, 0.15);
+            transform: translateY(-8px);
         }
 
-        .glass-card:hover::before { opacity: 1; }
+        /* Indicador de luz superior en las tarjetas */
+        .card-light {
+            height: 2px; width: 40px; 
+            background: #00d4ff; 
+            margin: 15px auto 0; 
+            box-shadow: 0 0 10px #00d4ff;
+            opacity: 0.4;
+        }
     </style>
 ''', unsafe_allow_html=True)
 
-# 3. CONTENIDO PRINCIPAL
+# 2. RENDERIZADO DEL LOGO
 st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
 
-# MENU LATERAL CON OPCIONES QUE BRILLAN
+# 3. NAVEGACIÓN LATERAL
 with st.sidebar:
-    opcion = st.radio(
-        "",
+    st.markdown("<br>", unsafe_allow_html=True)
+    menu = st.radio(
+        "", # Etiqueta vacía para que no ensucie
         ["DASHBOARD", "PRODUCTOS Y PRECIOS", "STOCK", "NUEVO PEDIDO", "HISTORIAL", "MODIFICAR PEDIDO"]
     )
 
-# DASHBOARD SIMPLIFICADO (SOLO 2 TARJETAS TIPO EJEMPLO 3)
-if opcion == "DASHBOARD":
+# 4. CONTENIDO: SOLO PEDIDOS Y BALANCE EN DASHBOARD
+if menu == "DASHBOARD":
+    st.markdown("<br>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown('''
-            <div class="glass-card">
-                <p style="color: #666; font-size: 14px; letter-spacing: 2px; font-family: 'Inter';">PEDIDOS ACTIVOS</p>
-                <h1 style="color: white; font-family: 'Orbitron'; font-size: 60px; margin: 10px 0;">15</h1>
-                <div style="width: 50px; height: 2px; background: #00d4ff; margin: 0 auto; opacity: 0.5;"></div>
+            <div class="dashboard-card">
+                <p style="color: #555; font-size: 13px; font-weight: 700; letter-spacing: 2px;">PEDIDOS ACTIVOS</p>
+                <h1 style="color: white; font-family: 'Orbitron'; font-size: 55px; margin: 15px 0;">15</h1>
+                <div class="card-light"></div>
             </div>
         ''', unsafe_allow_html=True)
 
     with col2:
         st.markdown('''
-            <div class="glass-card">
-                <p style="color: #666; font-size: 14px; letter-spacing: 2px; font-family: 'Inter';">BALANCE TOTAL</p>
-                <h1 style="color: #bc39fd; font-family: 'Orbitron'; font-size: 60px; margin: 10px 0;">$2,500</h1>
-                <div style="width: 50px; height: 2px; background: #bc39fd; margin: 0 auto; opacity: 0.5;"></div>
+            <div class="dashboard-card">
+                <p style="color: #555; font-size: 13px; font-weight: 700; letter-spacing: 2px;">BALANCE ACTUAL</p>
+                <h1 style="color: #bc39fd; font-family: 'Orbitron'; font-size: 55px; margin: 15px 0;">$2,500</h1>
+                <div class="card-light" style="background: #bc39fd; box-shadow: 0 0 10px #bc39fd;"></div>
             </div>
         ''', unsafe_allow_html=True)
 
