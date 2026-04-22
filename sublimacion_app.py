@@ -14,90 +14,75 @@ st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 st.markdown('''
     <style>
-        /* 1. FONDO INDUSTRIAL METÁLICO */
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;500;800&display=swap');
+        /* 1. FONDO SOLID GRIS CARBÓN (Igual a tu captura) */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;600;800&display=swap');
 
-        .stApp {
-            background: linear-gradient(180deg, #121212 0%, #1a1a1a 100%) !important;
-            color: #e0e0e0 !important;
+        .stApp, [data-testid="stHeader"], [data-testid="stSidebar"], .main {
+            background-color: #1a1a1a !important;
+            color: white !important;
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* 2. LOGO ESTILO TITANIO */
+        /* 2. LOGO "NOVA INK." (Tipografía y estructura real) */
         .main-logo { 
-            font-family: 'Syncopate', sans-serif; 
-            font-size: 50px; text-align: center; 
-            color: #ffffff; font-weight: 700; 
-            letter-spacing: 10px; margin-bottom: 40px;
-            text-transform: uppercase;
-            filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.8));
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 55px; text-align: center; 
+            color: white; font-weight: 600; 
+            letter-spacing: -2px; margin-bottom: 25px;
+            text-transform: capitalize; /* "Nova Ink" */
         }
+        .main-logo::after { content: "."; color: #00acc1; } /* El punto azul */
 
-        /* 3. ILUMINACIÓN TOTAL: ESTA REGLA AFECTA A TODO EL SISTEMA */
-        /* Tarjetas, Botones, Menús y Formularios se iluminan al pasar el mouse */
-        
-        div[data-testid="metric-container"], 
-        div.stButton > button, 
-        div[data-testid="stExpander"], 
-        .stSelectbox div, 
-        .stTextInput input,
-        section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            background: rgba(255, 255, 255, 0.02) !important;
-        }
-
-        /* EFECTO DE ILUMINACIÓN GLOBAL (HOVER) */
-        div[data-testid="metric-container"]:hover, 
-        div.stButton > button:hover, 
-        div[data-testid="stExpander"]:hover,
-        .stTextInput input:hover,
-        .stSelectbox div:hover {
-            border-color: #00f2ff !important; /* Cian Glaciar */
-            box-shadow: 0px 0px 20px rgba(0, 242, 255, 0.4) !important;
-            background: rgba(0, 242, 255, 0.05) !important;
-            transform: scale(1.01);
-        }
-
-        /* 4. BOTONES ESPECÍFICOS */
-        div.stButton > button {
-            border-radius: 4px !important;
-            text-transform: uppercase;
-            font-weight: 800 !important;
-            letter-spacing: 2px;
-        }
-
-        /* 5. MÉTRICAS (Igual al Dashboard) */
+        /* 3. MÉTRICAS (Igual al Dashboard) - Sólido con borde fino gray */
         div[data-testid="metric-container"] {
-            border-radius: 0px !important; /* Estilo industrial cuadrado */
-            border-left: 4px solid #ffffff !important;
+            background: #252525 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px !important;
             padding: 20px !important;
         }
 
-        /* 6. MENÚ LATERAL (Opciones que se iluminan) */
-        [data-testid="stSidebar"] {
-            background-color: #0f0f0f !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+        /* 4. BOTONES: SÓLIDOS Y PROFESIONALES */
+        div.stButton > button {
+            background-color: transparent !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 6px !important;
+            transition: all 0.3s ease !important;
+            font-weight: bold !important;
+        }
+        div.stButton > button:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border-color: white !important;
         }
 
-        /* Hacer que las opciones del radio button se iluminen */
+        /* 5. SIDEBAR (MENÚ LATERAL) - Fondo sólido carbón */
+        section[data-testid="stSidebar"] {
+            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+        
+        /* Estilo de las opciones del menú que se iluminan suave */
         div[role="radiogroup"] label {
+            transition: all 0.3s ease !important;
             padding: 10px !important;
             border-radius: 5px !important;
-            margin-bottom: 5px !important;
-            width: 100% !important;
         }
         
         div[role="radiogroup"] label:hover {
-            background: rgba(0, 242, 255, 0.1) !important;
-            color: #00f2ff !important;
+            background: rgba(0, 172, 193, 0.15) !important; /* Cian oscuro suave */
+            color: #ffffff !important;
         }
 
-        /* 7. FORMULARIOS */
-        div[data-testid="stForm"] {
-            background: transparent !important;
+        /* 6. TABLAS Y DATAFRAMES */
+        .stDataFrame, div[data-testid="stTable"] {
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            border-radius: 8px !important;
+        }
+
+        /* 7. INPUTS (FORMULARIOS) - Sólido oscuro */
+        input, select, textarea, div[data-baseweb="select"] > div {
+            background-color: #2a2a2a !important;
+            color: white !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            padding: 30px !important;
         }
     </style>
 ''', unsafe_allow_html=True)
