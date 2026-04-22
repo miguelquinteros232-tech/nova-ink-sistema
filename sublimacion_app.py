@@ -68,7 +68,7 @@ if st.session_state.get("authentication_status") is not True:
                     with open("config_pro.yaml", 'w') as f: yaml.dump(config, f, default_flow_style=False)
                     st.success("✅ Usuario creado."); time.sleep(1); st.rerun()
 
-# --- 4. APLICACIÓN PRINCIPAL (REEMPLAZAR TODO LO QUE SIGUE) ---
+# --- 4. APLICACIÓN PRINCIPAL (REEMPLAZAR TODO DESDE AQUÍ) ---
 elif st.session_state["authentication_status"]:
     @st.cache_resource
     def get_sh_conn():
@@ -92,16 +92,13 @@ elif st.session_state["authentication_status"]:
                     </h1>
                 </div>
             ''', unsafe_allow_html=True)
-            
             menu = st.radio("", ["📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"], key="nav_nova_ink")
 
-        # --- SECCIÓN DASHBOARD ---
+        # --- SECCIÓN DASHBOARD (CON ACCIONES RÁPIDAS) ---
         if "📊 DASHBOARD" in menu:
             try:
                 df_p = pd.DataFrame(ws_p.get_all_records())
-                # Solo los que están en proceso
                 df_act = df_p[df_p['Estado'] != 'Vendido'] if not df_p.empty else pd.DataFrame()
-                # BALANCE: Solo sumamos lo que YA SE VENDIÓ
                 df_vendidos = df_p[df_p['Estado'] == 'Vendido'] if not df_p.empty else pd.DataFrame()
                 v_monto = pd.to_numeric(df_vendidos['Monto'], errors='coerce').sum()
                 v_pedidos = len(df_act)
@@ -110,26 +107,30 @@ elif st.session_state["authentication_status"]:
 
             col1, col2 = st.columns(2)
             with col1:
-                st.write(f'''
-                    <div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;">
-                        <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">PEDIDOS ACTIVOS</p>
-                        <h2 style="color: #FFFFFF !important; font-family: 'Orbitron'; font-size: 45px; margin: 10px 0 0 0;">{v_pedidos}</h2>
-                    </div>
-                ''', unsafe_allow_html=True)
+                st.write(f'<div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;"><p style="color: #666 !important; font-size: 12px; font-weight: bold;">PEDIDOS ACTIVOS</p><h2 style="font-family: Orbitron; font-size: 45px;">{v_pedidos}</h2></div>', unsafe_allow_html=True)
             with col2:
-                st.write(f'''
-                    <div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;">
-                        <p style="color: #666 !important; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin: 0;">VENTAS REALIZADAS</p>
-                        <h2 style="color: #00d4ff !important; font-family: 'Orbitron'; font-size: 45px; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
-                    </div>
-                ''', unsafe_allow_html=True)
+                st.write(f'<div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;"><p style="color: #666 !important; font-size: 12px; font-weight: bold;">VENTAS REALIZADAS</p><h2 style="color: #00d4ff !important; font-family: Orbitron; font-size: 45px;">${v_monto:,.0f}</h2></div>', unsafe_allow_html=True)
             
-            st.write("### 🔍 DETALLE DE PEDIDOS EN CURSO")
-            st.dataframe(df_act, use_container_width=True)
+            st.write("### 🔍 GESTIÓN RÁPIDA DE PEDIDOS")
+            if not df_act.empty:
+                for i, row in df_act.iterrows():
+                    with st.expander(f"🔹 {row['Cliente']} | {row['Producto']} (${row['Monto']})"):
+                        st.write(f"**Descripción:** {row['Descripción']}")
+                        c1, c2, c3 = st.columns(3)
+                        # El índice real en Sheets es i + 2
+                        if c1.button("✅ MARCAR VENDIDO", key=f"v_{i}"):
+                            ws_p.update_cell(i+2, 7, "Vendido")
+                            st.rerun()
+                        if c2.button("❌ ELIMINAR / CANCELAR", key=f"d_{i}"):
+                            ws_p.delete_rows(i+2)
+                            st.rerun()
+                        st.info(f"Estado: {row['Estado']} | Pago: {row['Estado Pago']}")
+            else:
+                st.info("No hay pedidos activos.")
 
-        # --- SECCIÓN PEDIDOS ---
+        # --- SECCIÓN PEDIDOS (MODIFICACIÓN COMPLETA) ---
         elif "🛍️ PEDIDOS" in menu:
-            tab1, tab2 = st.tabs(["NUEVO PEDIDO", "MODIFICAR EXISTENTE"])
+            tab1, tab2 = st.tabs(["NUEVO PEDIDO", "MODIFICAR / EDITAR"])
             df_inv = pd.DataFrame(ws_i.get_all_records())
             
             with tab1:
@@ -149,18 +150,28 @@ elif st.session_state["authentication_status"]:
             with tab2:
                 df_p = pd.DataFrame(ws_p.get_all_records())
                 if not df_p.empty:
-                    # Buscamos por cliente y producto
-                    opciones = [f"{i+2} | {row['Cliente']} - {row['Producto']}" for i, row in df_p.iterrows() if row['Estado'] != 'Vendido']
-                    sel = st.selectbox("Seleccionar Pedido Activo", opciones)
+                    opciones = [f"{i+2} | {row['Cliente']} - {row['Producto']}" for i, row in df_p.iterrows()]
+                    sel = st.selectbox("Seleccionar Pedido para editar cualquier dato", opciones)
                     if sel:
                         fila = int(sel.split(" | ")[0])
-                        with st.form("mod_p"):
-                            nuevo_est = st.selectbox("Estado", ["Producción", "Pendiente", "Vendido"])
-                            nuevo_pag = st.selectbox("Pago", ["No Pago", "Seña", "Pagado Total"])
-                            if st.form_submit_button("ACTUALIZAR"):
-                                ws_p.update_cell(fila, 7, nuevo_est) # Columna Estado
-                                ws_p.update_cell(fila, 9, nuevo_pag) # Columna Pago
-                                st.success("¡Pedido Actualizado!"); time.sleep(1); st.rerun()
+                        datos = df_p.iloc[fila-2]
+                        with st.form("edit_p"):
+                            c1, c2 = st.columns(2)
+                            e_cli = c1.text_input("Cliente", value=datos['Cliente'])
+                            e_prd = c1.text_input("Producto", value=datos['Producto'])
+                            e_mon = c1.number_input("Monto $", value=float(datos['Monto']))
+                            e_det = c2.text_area("Descripción", value=datos['Descripción'])
+                            e_est = c2.selectbox("Estado", ["Producción", "Pendiente", "Vendido"], index=["Producción", "Pendiente", "Vendido"].index(datos['Estado']))
+                            e_pag = c2.selectbox("Pago", ["No Pago", "Seña", "Pagado Total"], index=["No Pago", "Seña", "Pagado Total"].index(datos['Estado Pago']))
+                            if st.form_submit_button("GUARDAR CAMBIOS TOTALES"):
+                                # Actualizamos celda por celda según tus columnas
+                                ws_p.update_cell(fila, 3, e_cli)
+                                ws_p.update_cell(fila, 4, e_prd)
+                                ws_p.update_cell(fila, 5, e_det)
+                                ws_p.update_cell(fila, 6, e_mon)
+                                ws_p.update_cell(fila, 7, e_est)
+                                ws_p.update_cell(fila, 9, e_pag)
+                                st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
 
         # --- SECCIÓN STOCK ---
         elif "📦 STOCK" in menu:
