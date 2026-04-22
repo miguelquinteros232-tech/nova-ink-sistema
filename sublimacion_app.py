@@ -9,12 +9,14 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. CAPA VISUAL (ESTILO CAPTURA 3 + NEÓN) ---
+# ==========================================
+# 1. CAPA VISUAL (ESTILO CAPTURA 3 + NEÓN)
+# ==========================================
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO NEGRO Y LIMPIEZA */
+        /* FONDO NEGRO PURO */
         .stApp { background-color: #000000 !important; }
         [data-testid="stSidebar"] { 
             background-color: #050505 !important; 
@@ -68,15 +70,15 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. CONFIGURACIÓN Y AUTENTICACIÓN (BLOQUE CRÍTICO) ---
-# (Asegúrate de que tus funciones load_config y el objeto authenticator estén definidos aquí arriba)
-
+# ==========================================
+# 2. LOGO Y NAVEGACIÓN (CON ICONOS)
+# ==========================================
+# IMPORTANTE: Este bloque DEBE ir después de crear el objeto 'authenticator'
 if st.session_state.get("authentication_status"):
-    # RECIÉN AQUÍ, CUANDO EL LOGIN ES EXITOSO, MOSTRAMOS EL MENÚ
     with st.sidebar:
         st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
         
-        # NAVEGADOR CON ICONOS (Items para cada sección)
+        # Agregamos los items con iconos para dar personalidad
         menu = st.radio("", [
             "📊 DASHBOARD", 
             "🛍️ PEDIDOS", 
@@ -86,27 +88,34 @@ if st.session_state.get("authentication_status"):
         ])
         
         st.write("---")
-        # Ahora 'authenticator' ya existe y no dará NameError
+        # El logout solo se llama si el usuario está autenticado
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    # --- 3. CONTENIDO PRINCIPAL (DASHBOARD) ---
+    # ==========================================
+    # 3. DASHBOARD (RESTAURADO)
+    # ==========================================
     if "DASHBOARD" in menu:
         st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
         
-        # Validación de datos (df_act debe ser el dataframe de tus pedidos activos)
-        if 'df_act' in locals() or 'df_act' in globals():
-            c1, c2 = st.columns(2)
-            with c1:
+        # Verificamos que existan los datos para no dar error
+        try:
+            df_p = pd.DataFrame(ws_p.get_all_records())
+            df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
+            df_act = df_p[df_p['Estado'] != 'Vendido']
+
+            col1, col2 = st.columns(2)
+            with col1:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">PEDIDOS ACTIVOS</div>
                     <div class="metric-value">{len(df_act)}</div>
                 </div>''', unsafe_allow_html=True)
-            with c2:
+            with col2:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">BALANCE PENDIENTE</div>
                     <div class="metric-value" style="color:#00d4ff;">${df_act['Monto'].sum():,.0f}</div>
                 </div>''', unsafe_allow_html=True)
-
+        except Exception as e:
+            st.error(f"Error cargando datos: {e}")
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
