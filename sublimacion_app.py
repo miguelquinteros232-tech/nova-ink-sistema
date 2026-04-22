@@ -9,65 +9,124 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. CAPA VISUAL DEFINITIVA (FORZANDO VISIBILIDAD) ---
+# --- 1. ESTILO VISUAL (FORZANDO VISIBILIDAD Y EFECTOS) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO NEGRO ABSOLUTO */
+        /* FONDO NEGRO Y SIDEBAR */
         .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
+        [data-testid="stSidebar"] { 
+            background-color: #050505 !important; 
+            border-right: 1px solid #1a1a1a !important; 
+        }
 
-        /* EL LOGO (CON EFECTOS DE NEÓN) */
+        /* LOGO CON EFECTO NEÓN */
         .logo-box {
             text-align: center; margin: 20px 0 40px 0;
             font-family: 'Orbitron', sans-serif;
-            font-size: 40px; font-weight: 700;
+            font-size: 38px; font-weight: 700;
             color: #ffffff !important;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.4);
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
         }
         .logo-box span { color: #00d4ff !important; }
 
-        /* MENÚ LATERAL: ITEMS CON LUZ (IMAGEN 3) */
+        /* ITEMS DEL MENÚ LATERAL (ESTILO IMAGEN 3) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
-            border: 1px solid #222 !important;
-            padding: 18px 25px !important;
+            border: 1px solid #1a1a1a !important;
+            padding: 15px 20px !important;
             border-radius: 12px !important;
-            margin-bottom: 12px !important;
+            margin-bottom: 10px !important;
             transition: 0.3s all ease !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
-            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2) !important;
+            transform: translateX(8px);
         }
         div[role="radiogroup"] label p {
-            color: #888888 !important; font-family: 'Inter', sans-serif !important;
-            font-weight: 700 !important; font-size: 15px !important;
+            color: #777 !important; font-weight: 700 !important;
         }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* TARJETAS DASHBOARD (PARA BALANCES) */
-        .dashboard-card {
-            background: linear-gradient(145deg, #111, #050505) !important;
-            border: 1px solid #252525 !important;
-            padding: 40px !important;
-            border-radius: 20px !important;
-            text-align: center !important;
-            margin-bottom: 20px !important;
+        /* TARJETAS DEL DASHBOARD */
+        .metric-card {
+            background: linear-gradient(145deg, #0f0f0f, #050505);
+            border: 1px solid #222;
+            padding: 35px 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 20px;
         }
-        .card-label { color: #666 !important; font-size: 13px; font-weight: 700; letter-spacing: 3px; }
-        .card-value { 
-            font-family: 'Orbitron', sans-serif !important; 
-            font-size: 45px !important; color: #ffffff !important; 
-            font-weight: 700 !important; margin-top: 10px !important;
+        .metric-label { color: #555 !important; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+        .metric-value { 
+            font-family: 'Orbitron', sans-serif; font-size: 42px; 
+            font-weight: 700; color: #ffffff !important; 
         }
 
-        /* FORZAR TEXTOS BLANCOS EN TODA LA APP */
+        /* FORZAR TEXTOS BLANCOS */
         h1, h2, h3, p, label, span, .stMarkdown { color: #ffffff !important; }
     </style>
 ''', unsafe_allow_html=True)
+
+# --- 2. NAVEGACIÓN ÚNICA ---
+if st.session_state.get("authentication_status"):
+    with st.sidebar:
+        # LOGO CON EFECTO VISUAL
+        st.markdown('<div class="logo-box">NOVA INK<span>.</span></div>', unsafe_allow_html=True)
+        
+        # MENÚ ÚNICO (Items con iconos)
+        menu = st.radio("", [
+            "📊 DASHBOARD", 
+            "🛍️ PEDIDOS", 
+            "📦 STOCK", 
+            "📜 HISTORIAL", 
+            "💰 COTIZADOR"
+        ])
+        
+        st.write("---")
+        if 'authenticator' in locals():
+            try:
+                authenticator.logout('Cerrar Sesión', 'sidebar')
+            except: pass
+
+    # --- 3. LÓGICA DEL DASHBOARD (CON VALORES EN 0 POR DEFECTO) ---
+    if "DASHBOARD" in menu:
+        # Inicializamos variables en 0 para que siempre aparezcan
+        cantidad_pedidos = 0
+        monto_total = 0.0
+        df_act = pd.DataFrame()
+
+        # Intentamos cargar los datos reales de tu lógica
+        try:
+            # Aquí va tu nombre de variable de Google Sheets (ej: ws_p)
+            df_p = pd.DataFrame(ws_p.get_all_records())
+            if not df_p.empty:
+                df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
+                df_act = df_p[df_p['Estado'] != 'Vendido']
+                cantidad_pedidos = len(df_act)
+                monto_total = df_act['Monto'].sum()
+        except:
+            # Si falla la carga o no hay datos, se quedan en 0 (sin error)
+            pass
+
+        # RENDERIZADO DE LAS TARJETAS (VISIBLES SÍ O SÍ)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f'''<div class="metric-card">
+                <div class="metric-label">PEDIDOS ACTIVOS</div>
+                <div class="metric-value">{cantidad_pedidos}</div>
+            </div>''', unsafe_allow_html=True)
+        with col2:
+            st.markdown(f'''<div class="metric-card">
+                <div class="metric-label">BALANCE PENDIENTE</div>
+                <div class="metric-value" style="color:#00d4ff;">${monto_total:,.0f}</div>
+            </div>''', unsafe_allow_html=True)
+        
+        st.write("---")
+        st.subheader("📋 Lista de Trabajo")
+        st.dataframe(df_act, use_container_width=True)
 
 # --- 2. NAVEGACIÓN (UN SOLO SIDEBAR) ---
 if st.session_state.get("authentication_status"):
