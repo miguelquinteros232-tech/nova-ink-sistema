@@ -14,57 +14,56 @@ st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* 1. FONDO Y ESTRUCTURA */
+        /* Fondo General */
         .stApp { background-color: #000000 !important; }
+        
+        /* Sidebar Estilo Captura 3 */
         [data-testid="stSidebar"] { 
             background-color: #050505 !important; 
             border-right: 1px solid #1a1a1a !important; 
         }
-        
-        /* 2. TEXTOS GENERALES (FORZAR BLANCO) */
-        .stMarkdown, p, label, h1, h2, h3, span { color: #ffffff !important; }
 
-        /* 3. LOGO NOVA INK (ESTILO IMAGEN 3) */
-        .logo-container { text-align: center; margin: 30px 0; }
+        /* Logo Nova Ink */
+        .logo-container { text-align: center; margin: 20px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 50px; color: white !important; font-weight: 700;
-            letter-spacing: 4px; text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+            font-size: 45px; color: white !important;
+            letter-spacing: 3px; text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
         }
-        .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
+        .logo-text span { color: #00d4ff !important; }
 
-        /* 4. MENÚ LATERAL: LAS CELDAS DE LUZ */
+        /* Items del Menú (Botones con Brillo) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #222 !important;
-            padding: 18px 22px !important;
-            border-radius: 12px !important;
-            margin-bottom: 10px !important;
+            padding: 15px 20px !important;
+            border-radius: 10px !important;
+            margin-bottom: 8px !important;
             transition: 0.3s all ease !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
-            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+            transform: translateX(5px);
         }
         div[role="radiogroup"] label p {
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 700 !important; color: #888 !important;
-            font-size: 14px !important;
+            color: #888 !important; font-weight: 700 !important;
         }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* 5. TARJETAS DEL DASHBOARD */
+        /* Tarjetas de Dashboard (Balances) */
         .metric-card {
             background: linear-gradient(145deg, #111, #050505);
-            border: 1px solid #252525;
-            padding: 40px 20px;
-            border-radius: 20px;
+            border: 1px solid #222;
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
-            margin-bottom: 15px;
         }
-        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; color: white !important; }
+        .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 35px; color: white !important; }
+
+        /* Forzar visibilidad de textos de Streamlit */
+        .stMarkdown, p, label, h1, h2, h3 { color: white !important; }
     </style>
 ''', unsafe_allow_html=True)
 
