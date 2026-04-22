@@ -14,67 +14,98 @@ st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
 
 st.markdown('''
     <style>
-        /* 1. FORZAR FONDO NEGRO EN TODA LA APP */
-        .stApp, [data-testid="stHeader"], [data-testid="stSidebar"], .main {
-            background-color: #05000a !important;
+        /* 1. FONDO DINÁMICO (No más fondo apagado) */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Poppins:wght@300;600&display=swap');
+
+        .stApp {
+            background: radial-gradient(circle at top center, #0a0015 0%, #05000a 100%) !important;
+            background-attachment: fixed;
         }
 
-        /* 2. LOGO CON DEGRADADO */
+        /* 2. EFECTO DE LUZ DE FONDO (Sutil resplandor púrpura en las esquinas) */
+        .stApp::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 10% 10%, rgba(188, 57, 253, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 90% 90%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* 3. LOGO CON GLOW INTENSO */
         .main-logo { 
             font-family: 'Orbitron', sans-serif; 
-            font-size: 55px; text-align: center; 
+            font-size: 65px; text-align: center; 
             background: linear-gradient(90deg, #00d4ff, #bc39fd, #00d4ff); 
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            font-weight: 900; margin-bottom: 20px;
-            filter: drop-shadow(0px 0px 10px rgba(0, 212, 255, 0.5));
+            font-weight: 900;
+            filter: drop-shadow(0px 0px 15px rgba(188, 57, 253, 0.8));
+            animation: pulse 4s infinite;
         }
 
-        /* 3. MÉTRICAS: EL CORAZÓN DEL DISEÑO FLUX */
-        /* Forzamos el borde neón cian y el fondo oscuro */
+        @keyframes pulse {
+            0% { filter: drop-shadow(0px 0px 10px rgba(0, 212, 255, 0.4)); }
+            50% { filter: drop-shadow(0px 0px 20px rgba(188, 57, 253, 0.7)); }
+            100% { filter: drop-shadow(0px 0px 10px rgba(0, 212, 255, 0.4)); }
+        }
+
+        /* 4. ILUMINACIÓN TOTAL DE BOTONES (Hover Effect) */
+        /* Esto afecta a todos los botones del sistema */
+        button {
+            border: 1px solid #bc39fd !important;
+            background: rgba(188, 57, 253, 0.05) !important;
+            color: white !important;
+            transition: all 0.4s ease !important;
+            box-shadow: 0 0 0px transparent !important;
+        }
+
+        button:hover {
+            background: #bc39fd !important;
+            color: black !important;
+            box-shadow: 0px 0px 25px #bc39fd, 0px 0px 50px rgba(188, 57, 253, 0.4) !important;
+            transform: scale(1.02);
+            border: 1px solid white !important;
+        }
+
+        /* 5. TARJETAS Y MÉTRICAS CON "BORDE DE TINTA" */
         div[data-testid="metric-container"] {
-            background: rgba(0, 212, 255, 0.05) !important;
-            border: 2px solid #00d4ff !important;
-            box-shadow: 0px 0px 20px rgba(0, 212, 255, 0.3) !important;
-            border-radius: 20px !important;
+            background: rgba(0, 0, 0, 0.4) !important;
+            border-left: 5px solid #00d4ff !important;
+            border-right: 1px solid rgba(0, 212, 255, 0.2) !important;
+            border-top: 1px solid rgba(0, 212, 255, 0.2) !important;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2) !important;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5) !important;
+            border-radius: 10px !important;
             padding: 15px !important;
         }
+
+        div[data-testid="metric-container"]:hover {
+            border-left: 5px solid #bc39fd !important;
+            box-shadow: 0px 0px 20px rgba(188, 57, 253, 0.3) !important;
+        }
+
+        /* 6. INPUTS Y SELECTORES (Campos de texto) */
+        .stTextInput input, .stSelectbox div, .stNumberInput input, .stTextArea textarea {
+            background-color: #100020 !important;
+            color: #00d4ff !important;
+            border: 1px solid rgba(0, 212, 255, 0.3) !important;
+            border-radius: 8px !important;
+        }
+
+        .stTextInput input:focus, .stTextArea textarea:focus {
+            border-color: #bc39fd !important;
+            box-shadow: 0px 0px 15px rgba(188, 57, 253, 0.5) !important;
+        }
+
+        /* 7. SIDEBAR (MENÚ) */
+        [data-testid="stSidebar"] {
+            border-right: 1px solid rgba(188, 57, 253, 0.2) !important;
+        }
         
-        /* Color del texto de las métricas */
-        [data-testid="stMetricValue"] > div { color: #00d4ff !important; }
-        [data-testid="stMetricLabel"] > div > p { color: white !important; }
-
-        /* 4. BOTONES: EFECTO DE TINTA PÚRPURA */
-        div.stButton > button {
-            background-color: transparent !important;
-            color: #bc39fd !important;
-            border: 2px solid #bc39fd !important;
-            border-radius: 30px !important;
-            transition: 0.5s !important;
-            font-weight: bold !important;
-        }
-        div.stButton > button:hover {
-            background-color: #bc39fd !important;
-            color: black !important;
-            box-shadow: 0px 0px 25px #bc39fd !important;
-        }
-
-        /* 5. SIDEBAR (MENÚ LATERAL) */
-        section[data-testid="stSidebar"] {
-            border-right: 1px solid rgba(0, 212, 255, 0.2) !important;
-        }
-        
-        /* 6. TABLAS Y DATAFRAMES */
-        .stDataFrame, div[data-testid="stTable"] {
-            background-color: #05000a !important;
-            border: 1px solid rgba(188, 57, 253, 0.3) !important;
-            border-radius: 15px !important;
-        }
-
-        /* 7. INPUTS (FORMULARIOS) */
-        input, select, textarea {
-            background-color: #0a0015 !important;
-            color: white !important;
-            border: 1px solid #00d4ff !important;
+        /* 8. TABLAS (DATA INTERFACE) */
+        .stDataFrame {
+            border: 1px solid rgba(0, 212, 255, 0.2) !important;
+            border-radius: 10px !important;
         }
     </style>
 ''', unsafe_allow_html=True)
