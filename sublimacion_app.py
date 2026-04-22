@@ -9,81 +9,61 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. ESTILO VISUAL (FORZANDO VISIBILIDAD Y EFECTOS) ---
+# --- 1. ESTILO VISUAL ÚNICO (Efectos de la Captura 3) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
-
-        /* FONDO NEGRO Y SIDEBAR */
         .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { 
-            background-color: #050505 !important; 
-            border-right: 1px solid #1a1a1a !important; 
-        }
-
-        /* LOGO CON EFECTO NEÓN */
+        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
+        
+        /* LOGO CON NEÓN */
         .logo-box {
             text-align: center; margin: 20px 0 40px 0;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 38px; font-weight: 700;
-            color: #ffffff !important;
-            text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
+            font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700;
+            color: #ffffff !important; text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
         }
         .logo-box span { color: #00d4ff !important; }
 
-        /* ITEMS DEL MENÚ LATERAL (ESTILO IMAGEN 3) */
+        /* ITEMS DEL MENÚ CON LUZ */
         div[role="radiogroup"] label {
-            background: #0d0d0d !important;
-            border: 1px solid #1a1a1a !important;
-            padding: 15px 20px !important;
-            border-radius: 12px !important;
-            margin-bottom: 10px !important;
-            transition: 0.3s all ease !important;
+            background: #0d0d0d !important; border: 1px solid #1a1a1a !important;
+            padding: 15px 20px !important; border-radius: 12px !important;
+            margin-bottom: 10px !important; transition: 0.3s all ease !important;
         }
         div[role="radiogroup"] label:hover {
-            border-color: #00d4ff !important;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2) !important;
+            border-color: #00d4ff !important; box-shadow: 0 0 20px rgba(0, 212, 255, 0.2) !important;
             transform: translateX(8px);
         }
-        div[role="radiogroup"] label p {
-            color: #777 !important; font-weight: 700 !important;
-        }
+        div[role="radiogroup"] label p { color: #777 !important; font-weight: 700 !important; }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* TARJETAS DEL DASHBOARD */
+        /* TARJETAS DASHBOARD */
         .metric-card {
             background: linear-gradient(145deg, #0f0f0f, #050505);
-            border: 1px solid #222;
-            padding: 35px 20px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 20px;
+            border: 1px solid #222; padding: 35px 20px;
+            border-radius: 20px; text-align: center; margin-bottom: 20px;
         }
         .metric-label { color: #555 !important; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-value { 
-            font-family: 'Orbitron', sans-serif; font-size: 42px; 
-            font-weight: 700; color: #ffffff !important; 
-        }
-
-        /* FORZAR TEXTOS BLANCOS */
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 700; color: #ffffff !important; }
+        
+        /* FORZAR VISIBILIDAD TOTAL */
         h1, h2, h3, p, label, span, .stMarkdown { color: #ffffff !important; }
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. NAVEGACIÓN ÚNICA ---
+# --- 2. NAVEGACIÓN ÚNICA (Sin duplicados) ---
 if st.session_state.get("authentication_status"):
     with st.sidebar:
-        # LOGO CON EFECTO VISUAL
         st.markdown('<div class="logo-box">NOVA INK<span>.</span></div>', unsafe_allow_html=True)
         
-        # MENÚ ÚNICO (Items con iconos)
+        # El parámetro 'key' evita el error de DuplicateElementId
         menu = st.radio("", [
             "📊 DASHBOARD", 
             "🛍️ PEDIDOS", 
             "📦 STOCK", 
             "📜 HISTORIAL", 
             "💰 COTIZADOR"
-        ])
+        ], key="menu_principal_nova")
         
         st.write("---")
         if 'authenticator' in locals():
@@ -91,88 +71,36 @@ if st.session_state.get("authentication_status"):
                 authenticator.logout('Cerrar Sesión', 'sidebar')
             except: pass
 
-    # --- 3. LÓGICA DEL DASHBOARD (CON VALORES EN 0 POR DEFECTO) ---
+    # --- 3. DASHBOARD CON VALORES EN 0 ---
     if "DASHBOARD" in menu:
-        # Inicializamos variables en 0 para que siempre aparezcan
-        cantidad_pedidos = 0
-        monto_total = 0.0
+        # Valores por defecto para que nunca aparezca vacío
+        cant, monto = 0, 0.0
         df_act = pd.DataFrame()
 
-        # Intentamos cargar los datos reales de tu lógica
         try:
-            # Aquí va tu nombre de variable de Google Sheets (ej: ws_p)
+            # Intento cargar tus datos (ws_p es tu variable de Google Sheets)
             df_p = pd.DataFrame(ws_p.get_all_records())
             if not df_p.empty:
                 df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
                 df_act = df_p[df_p['Estado'] != 'Vendido']
-                cantidad_pedidos = len(df_act)
-                monto_total = df_act['Monto'].sum()
-        except:
-            # Si falla la carga o no hay datos, se quedan en 0 (sin error)
-            pass
+                cant = len(df_act)
+                monto = df_act['Monto'].sum()
+        except Exception:
+            pass # Si falla, se mantienen en 0
 
-        # RENDERIZADO DE LAS TARJETAS (VISIBLES SÍ O SÍ)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f'''<div class="metric-card">
-                <div class="metric-label">PEDIDOS ACTIVOS</div>
-                <div class="metric-value">{cantidad_pedidos}</div>
-            </div>''', unsafe_allow_html=True)
-        with col2:
-            st.markdown(f'''<div class="metric-card">
-                <div class="metric-label">BALANCE PENDIENTE</div>
-                <div class="metric-value" style="color:#00d4ff;">${monto_total:,.0f}</div>
-            </div>''', unsafe_allow_html=True)
+        # Mostramos las tarjetas del Dashboard (Sí o sí visibles)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">PEDIDOS ACTIVOS</div><div class="metric-value">{cant}</div></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">BALANCE PENDIENTE</div><div class="metric-value" style="color:#00d4ff;">${monto:,.0f}</div></div>', unsafe_allow_html=True)
         
         st.write("---")
-        st.subheader("📋 Lista de Trabajo")
+        st.subheader("📋 Pedidos Actuales")
         st.dataframe(df_act, use_container_width=True)
 
-# --- 2. NAVEGACIÓN (UN SOLO SIDEBAR) ---
-if st.session_state.get("authentication_status"):
-    with st.sidebar:
-        # Logo con efectos
-        st.markdown('<div class="logo-box">NOVA INK<span>.</span></div>', unsafe_allow_html=True)
-        
-        # Un solo radio button con iconos
-        menu = st.radio("", [
-            "📊 DASHBOARD", 
-            "🛍️ PEDIDOS", 
-            "📦 STOCK", 
-            "📜 HISTORIAL", 
-            "💰 COTIZADOR"
-        ])
-        
-        st.write("---")
-        try:
-            authenticator.logout('Cerrar Sesión', 'sidebar')
-        except:
-            pass
-
-    # --- 3. LÓGICA DEL DASHBOARD (AQUÍ ES DONDE APARECEN TUS BALANCES) ---
-    if "DASHBOARD" in menu:
-        # Asegúrate de que df_act tenga los datos de tus pedidos actuales
-        try:
-            # Reutilizo tus variables actuales
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(f'''<div class="dashboard-card">
-                    <div class="card-label">PEDIDOS ACTIVOS</div>
-                    <div class="card-value">{len(df_act)}</div>
-                </div>''', unsafe_allow_html=True)
-            with col2:
-                # Cambia 'df_act' por el nombre de tu dataframe real si es distinto
-                balance_total = df_act['Monto'].sum()
-                st.markdown(f'''<div class="dashboard-card">
-                    <div class="card-label">BALANCE PENDIENTE</div>
-                    <div class="card-value" style="color:#00d4ff;">${balance_total:,.0f}</div>
-                </div>''', unsafe_allow_html=True)
-            
-            st.write("---")
-            st.subheader("Pedidos en curso")
-            st.dataframe(df_act) # Tu tabla normal
-        except Exception as e:
-            st.warning("Cargando datos desde la nube...")
+# --- ABAJO SIGUE TU LÓGICA DE PEDIDOS, STOCK, ETC. ---
+# Asegúrate de que tus IF usen el nombre con el icono, ej: if menu == "🛍️ PEDIDOS":
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
