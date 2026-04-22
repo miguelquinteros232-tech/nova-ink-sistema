@@ -12,42 +12,29 @@ import os
 import streamlit as st
 import pandas as pd
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Nova Ink Sistema", layout="wide")
-
-# --- INYECCIÓN DE CSS TOTAL (FUERZA BRUTA) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
-
-        /* Fondo y Sidebar */
-        .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { 
-            background-color: #050505 !important; 
-            border-right: 1px solid #1a1a1a !important; 
-        }
-
-        /* Texto General Forzado a Blanco */
-        h1, h2, h3, p, span, label, div { color: white !important; }
-
-        /* Estilo para los ítems del Menú */
+        
+        /* Fondo Negro y Sidebar */
+        .stApp, [data-testid="stHeader"] { background-color: #000000 !important; }
+        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
+        
+        /* Estilo de los Items del Menú */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
             border: 1px solid #1a1a1a !important;
             padding: 15px 20px !important;
             border-radius: 12px !important;
             margin-bottom: 10px !important;
-            transition: 0.3s all ease;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-            transform: translateX(5px);
         }
-        div[role="radiogroup"] label p { font-weight: 700 !important; color: #888 !important; }
-        div[role="radiogroup"] label:hover p { color: white !important; }
     </style>
 ''', unsafe_allow_html=True)
+
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
