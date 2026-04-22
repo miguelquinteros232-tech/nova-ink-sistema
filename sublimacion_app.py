@@ -20,35 +20,22 @@ st.markdown('''
         
         /* LOGO NOVA INK CON NEÓN */
         .logo-box {
-            text-align: center; margin: 20px 0 40px 0;
+            text-align: center; margin: 10px 0 30px 0;
             font-family: 'Orbitron', sans-serif; font-size: 35px; font-weight: 700;
             color: #ffffff !important; text-shadow: 0 0 15px rgba(0, 212, 255, 0.7);
         }
         .logo-box span { color: #00d4ff !important; }
 
-        /* BOTONES DEL MENÚ (ESTILO CAPTURA 3) */
-        div[role="radiogroup"] label {
-            background: #0d0d0d !important; border: 1px solid #1a1a1a !important;
-            padding: 15px 20px !important; border-radius: 12px !important;
-            margin-bottom: 10px !important; transition: 0.3s all ease !important;
-        }
-        div[role="radiogroup"] label:hover {
-            border-color: #00d4ff !important; box-shadow: 0 0 20px rgba(0, 212, 255, 0.2) !important;
-            transform: translateX(8px);
-        }
-        div[role="radiogroup"] label p { color: #777 !important; font-weight: 700 !important; }
-        div[role="radiogroup"] label:hover p { color: #ffffff !important; }
-
         /* TARJETAS DEL DASHBOARD */
         .metric-card {
             background: linear-gradient(145deg, #0f0f0f, #050505);
-            border: 1px solid #222; padding: 30px;
-            border-radius: 20px; text-align: center; margin-bottom: 20px;
+            border: 1px solid #222; padding: 25px;
+            border-radius: 20px; text-align: center; margin-bottom: 15px;
         }
         .metric-label { color: #555 !important; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
         .metric-value { font-family: 'Orbitron', sans-serif; font-size: 40px; font-weight: 700; color: #ffffff !important; }
         
-        /* FORZAR TODO A BLANCO */
+        /* FORZAR TODO EL TEXTO A BLANCO */
         h1, h2, h3, p, label, span, .stMarkdown { color: #ffffff !important; }
     </style>
 ''', unsafe_allow_html=True)
