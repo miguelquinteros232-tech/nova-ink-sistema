@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 import os
 
-# 1. ESTILO "NOVA ELITE" (RESTAURADO DE LA CAPTURA 3)
+# 1. MOTOR VISUAL (CSS QUE NO BLOQUEA EL CONTENIDO)
 st.set_page_config(page_title="NOVA INK", layout="wide")
 
 st.markdown('''
@@ -21,15 +21,18 @@ st.markdown('''
             background-color: #0a0a0a !important;
         }
 
+        /* TEXTOS VISIBLES PARA LOGIN */
+        .stMarkdown, p, label { color: white !important; }
+        
         /* LOGO ESTILO CAPTURA 3 */
-        .logo-container { text-align: center; padding: 30px 0; }
+        .logo-container { text-align: center; padding: 25px 0; }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 50px; color: white; letter-spacing: 5px;
+            font-size: 50px; color: white; letter-spacing: 2px;
         }
         .logo-text span { color: #00d4ff; text-shadow: 0 0 15px #00d4ff; }
 
-        /* MENÚ LATERAL: BOTONES CON LUZ */
+        /* MENÚ LATERAL: CELDAS DE LUZ */
         div[role="radiogroup"] label {
             background-color: #151515 !important;
             border: 1px solid #252525 !important;
@@ -49,7 +52,7 @@ st.markdown('''
         }
         div[role="radiogroup"] label:hover p { color: white !important; }
 
-        /* TARJETAS GLASS PARA DASHBOARD */
+        /* TARJETAS DEL DASHBOARD */
         .glass-card {
             background: linear-gradient(145deg, #181818, #0c0c0c);
             border: 1px solid #222;
@@ -60,30 +63,56 @@ st.markdown('''
     </style>
 ''', unsafe_allow_html=True)
 
-# 2. LOGO CENTRAL
+# LOGO SIEMPRE ARRIBA
 st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
 
-# 3. LÓGICA DE USUARIOS (TU CÓDIGO ORIGINAL)
+# 2. CONFIGURACIÓN DE USUARIOS
 def load_config():
     file_path = "config_pro.yaml"
-    initial_config = {'credentials': {'usernames': {}}, 'cookie': {'expiry_days': 30, 'key': 'nova_key_pro', 'name': 'nova_auth'}}
-    if not os.path.exists(file_path):
+    initial_config = {
+        'credentials': {'usernames': {}},
+        'cookie': {'expiry_days': 30, 'key': 'nova_key_pro', 'name': 'nova_auth'},
+        'preauthorized': {'emails': []}
+    }
+    if not os.path.exists(file_path) or os.stat(file_path).st_size == 0:
         with open(file_path, 'w') as f: yaml.dump(initial_config, f)
-    with open(file_path) as f: return yaml.load(f, Loader=SafeLoader)
+        return initial_config
+    with open(file_path) as f:
+        cfg = yaml.load(f, Loader=SafeLoader)
+        return cfg if cfg else initial_config
 
 config = load_config()
-authenticator = stauth.Authenticate(config['credentials'], config['cookie']['name'], config['cookie']['key'], config['cookie']['expiry_days'])
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
 
-# 4. LOGIN
+# 3. SISTEMA DE LOGIN
 name, authentication_status, username = authenticator.login(location='main')
 
-if st.session_state.get("authentication_status") is False:
-    st.error("Credenciales incorrectas")
-elif st.session_state.get("authentication_status") is None:
-    st.info("Inicia sesión para continuar")
-elif st.session_state["authentication_status"]:
+# --- ESTADO: NO LOGUEADO ---
+if st.session_state.get("authentication_status") is not True:
+    st.info("Inicia sesión para gestionar Nova Ink.")
+    
+    with st.expander("📝 REGISTRO DE NUEVO USUARIO"):
+        with st.form("registro"):
+            new_email = st.text_input("Email")
+            new_user = st.text_input("Usuario")
+            new_pass = st.text_input("Password", type="password")
+            if st.form_submit_button("REGISTRAR"):
+                if new_email and new_user and new_pass:
+                    hashed = stauth.Hasher([new_pass]).generate()[0]
+                    config['credentials']['usernames'][new_user] = {'email': new_email, 'name': new_user, 'password': hashed}
+                    with open("config_pro.yaml", 'w') as f: yaml.dump(config, f)
+                    st.success("Registrado. Ya puedes loguearte.")
+                    time.sleep(1)
+                    st.rerun()
 
-    # 5. CONEXIÓN GOOGLE SHEETS (TU LÓGICA ORIGINAL)
+# --- ESTADO: LOGUEADO (TODA TU APP AQUÍ DENTRO) ---
+elif st.session_state["authentication_status"]:
+    
     @st.cache_resource
     def get_sh_conn():
         try:
@@ -91,7 +120,8 @@ elif st.session_state["authentication_status"]:
             creds_dict = dict(st.secrets["connections"]["gsheets"])
             creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-            return gspread.authorize(credentials).open_by_key("1Y0pJANMQxuW_HTS6__Td69fJYvyfyeOyX0thC1CpzlA")
+            client = gspread.authorize(credentials)
+            return client.open_by_key("1Y0pJANMQxuW_HTS6__Td69fJYvyfyeOyX0thC1CpzlA")
         except: return None
 
     sh = get_sh_conn()
@@ -100,50 +130,45 @@ elif st.session_state["authentication_status"]:
         ws_i = sh.worksheet("Inventario")
 
         with st.sidebar:
-            st.markdown(f"<p style='color:white; text-align:center;'>Hola, {st.session_state['name']}</p>", unsafe_allow_html=True)
-            opcion = st.radio("", ["DASHBOARD", "PRODUCTOS Y PRECIOS", "STOCK", "NUEVO PEDIDO", "HISTORIAL", "MODIFICAR PEDIDO"])
-            st.write("---")
+            st.write(f"### Bienvenido, {st.session_state['name']} 👋")
+            opcion = st.radio("", ["DASHBOARD", "NUEVO PEDIDO", "STOCK", "HISTORIAL"])
+            st.divider()
             authenticator.logout('Cerrar Sesión', 'sidebar')
 
-        # --- SECCIONES DE TU APP ---
+        # SECCIÓN DASHBOARD
         if opcion == "DASHBOARD":
             df_p = pd.DataFrame(ws_p.get_all_records())
             if not df_p.empty:
                 df_p['Monto'] = pd.to_numeric(df_p['Monto'], errors='coerce').fillna(0)
                 df_act = df_p[df_p['Estado'] != 'Vendido']
                 
-                c1, c2 = st.columns(2)
-                with c1:
+                col1, col2 = st.columns(2)
+                with col1:
                     st.markdown(f'''<div class="glass-card">
                         <p style="color:#666; font-size:12px; letter-spacing:2px;">PEDIDOS ACTIVOS</p>
                         <h1 style="color:white; font-family:'Orbitron'; font-size:55px;">{len(df_act)}</h1>
-                        <div style="width:40px; height:2px; background:#00d4ff; margin:0 auto;"></div>
                     </div>''', unsafe_allow_html=True)
-                with c2:
+                with col2:
                     st.markdown(f'''<div class="glass-card">
-                        <p style="color:#666; font-size:12px; letter-spacing:2px;">CAPITAL PENDIENTE</p>
+                        <p style="color:#666; font-size:12px; letter-spacing:2px;">BALANCE</p>
                         <h1 style="color:#bc39fd; font-family:'Orbitron'; font-size:55px;">${df_act['Monto'].sum():,.0f}</h1>
-                        <div style="width:40px; height:2px; background:#bc39fd; margin:0 auto;"></div>
                     </div>''', unsafe_allow_html=True)
 
+        # SECCIÓN STOCK
         elif opcion == "STOCK":
-            st.markdown("<h2 style='color:white;'>Inventario Actual</h2>", unsafe_allow_html=True)
             df_st = pd.DataFrame(ws_i.get_all_records())
             st.dataframe(df_st, use_container_width=True)
 
+        # SECCIÓN NUEVO PEDIDO
         elif opcion == "NUEVO PEDIDO":
             df_inv = pd.DataFrame(ws_i.get_all_records())
             with st.form("n_p"):
                 c1, c2 = st.columns(2)
-                cli, prd = c1.text_input("Cliente"), c1.text_input("Producto")
-                det, pago = c2.text_area("Descripción"), c2.selectbox("Estado Pago", ["No Pago", "Seña", "Pagado Total"])
-                mon = st.number_input("Precio Final $")
+                cli = c1.text_input("Cliente")
+                prd = c1.text_input("Producto")
+                mon = c2.number_input("Monto $")
                 mat = st.selectbox("Insumo", df_inv['Nombre'].tolist() if not df_inv.empty else [])
-                can = st.number_input("Cantidad a restar", min_value=0.0)
-                if st.form_submit_button("REGISTRAR PEDIDO"):
-                    idx = df_inv[df_inv['Nombre'] == mat].index[0]
-                    ws_i.update_cell(idx+2, 6, float(df_inv.at[idx, 'Cantidad']) - can)
-                    ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, det, mon, "Producción", 0, pago])
-                    st.success("Registrado correctamente."); st.rerun()
-
-        # Las otras secciones (HISTORIAL, MODIFICAR) siguen el mismo patrón de tu código original.
+                if st.form_submit_button("REGISTRAR"):
+                    ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, "", mon, "Producción"])
+                    st.success("Pedido cargado.")
+                    st.rerun()
