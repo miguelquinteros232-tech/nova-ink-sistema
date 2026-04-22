@@ -9,95 +9,118 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. CONFIGURACIÓN VISUAL DEFINTIVA: THE NEON GRID ---
+# --- 1. CONFIGURACIÓN VISUAL DEFINITIVA: THE BIO-DIGITAL FLUX ---
+st.set_page_config(page_title="NOVA INK - PREMIUM OS", layout="wide")
+
+# Colores de la marca Nova Ink para referencia en el CSS:
+# Negro Absoluto: #05000a
+# Cian Eléctrico: #00d4ff (Bordes fluidos activos)
+# Púrpura Nova: #bc39fd (Acentos y flujo sutil)
+
 st.markdown('''
     <style>
-        /* 1. FUENTES Y FONDO TOTAL */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto+Mono:wght@400;700&display=swap');
-        
-        .stApp, [data-testid="stHeader"], [data-testid="stSidebar"] {
-            background-color: #05000a !important;
-            color: white !important;
+        /* Importamos las tipografías */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Poppins:wght@400;700&display=swap');
+
+        /* 1. Fondo Base (El Negro Profundo y Suave) */
+        .stApp { 
+            background: #05000a; 
+            color: white; 
+            font-family: 'Poppins', sans-serif; /* Tipografía más redondeada y fluida */
         }
 
-        /* 2. LOGO NOVA INK */
+        /* 2. El Logo Principal (Con Degradado y Brillo de Tinta) */
         .main-logo { 
             font-family: 'Orbitron', sans-serif; 
-            font-size: 60px; text-align: center; 
-            background: linear-gradient(90deg, #bc39fd, #00d4ff, #bc39fd); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            letter-spacing: 12px; font-weight: 900; margin-bottom: 25px;
-            filter: drop-shadow(0px 0px 8px rgba(188, 57, 253, 0.6));
+            font-size: 60px; 
+            text-align: center; 
+            background: linear-gradient(90deg, #00d4ff, #bc39fd, #00d4ff); /* Degradado invertido para mayor fluidez */
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            letter-spacing: 12px; 
+            font-weight: 900; 
+            margin-bottom: 25px;
+            filter: drop-shadow(0px 0px 8px rgba(0, 212, 255, 0.7)); /* Glow de tinta cian */
         }
 
-        /* 3. TABLAS (STOCK E HISTORIAL) - Estilo Dark Neon */
-        [data-testid="stDataFrame"] {
-            border: 1px solid rgba(0, 212, 255, 0.3) !important;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        /* Forzar colores en la tabla de datos */
-        div[data-testid="stTable"] table {
-            background-color: #05000a !important;
-            color: #00d4ff !important;
-        }
-
-        /* 4. MÉTRICAS (DASHBOARD) */
+        /* 3. Las Métricas (Con Borde de Tinta Fluida Glow) */
         div[data-testid="metric-container"] {
-            background: rgba(188, 57, 253, 0.05) !important;
-            border: 2px solid #00d4ff !important;
-            box-shadow: 0px 0px 15px rgba(0, 212, 255, 0.3) !important;
-            border-radius: 12px;
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.6); /* Fondo ultra-negro translúcido */
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 2px solid #00d4ff; /* Borde Cian de tinta fluida base */
+            box-shadow: 0px 0px 20px rgba(0, 212, 255, 0.5); /* Efecto Glow Cian intenso */
+            transition: 0.3s ease-in-out;
+            margin-bottom: 20px;
         }
 
-        /* 5. INPUTS Y FORMULARIOS (Gris oscuro con borde neón) */
-        input, textarea, select, .stSelectbox, .stNumberInput {
-            background-color: #100020 !important;
-            color: #00d4ff !important;
-            border: 1px solid rgba(0, 212, 255, 0.2) !important;
+        /* Efecto al pasar el mouse por las métricas */
+        div[data-testid="metric-container"]:hover {
+            border-color: #bc39fd; /* Cambia a Púrpura de tinta */
+            box-shadow: 0px 0px 25px rgba(188, 57, 253, 0.7); /* Glow Púrpura intenso */
+            transform: translateY(-5px); /* Pequeña elevación */
         }
 
-        /* 6. EXPANDERS (ACORDEONES DE PEDIDOS) */
-        div[data-testid="stExpander"] {
-            background: rgba(0, 0, 0, 0.8) !important;
-            border: 1px solid rgba(188, 57, 253, 0.4) !important;
-            border-radius: 10px !important;
+        /* Color de las etiquetas y valores de las métricas */
+        div[data-testid="metric-container"] label,
+        div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
+            color: #00d4ff !important; /* Texto en Cian Eléctrico para contraste */
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
         }
-        
-        /* 7. BOTONES NEÓN PÚRPURA */
+
+        /* 4. Los Expanders (Bordes Fluidos Orgánicos para los Pedidos) */
+        div[data-testid="stExpander"] { 
+            background: rgba(188, 57, 253, 0.05); /* Fondo Púrpura de tinta sutil */
+            border: 2px solid rgba(0, 212, 255, 0.2); /* Borde Cian de tinta muy sutil */
+            border-radius: 15px; 
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+
+        /* Efecto al pasar el mouse por los pedidos del Dashboard */
+        div[data-testid="stExpander"]:hover { 
+            border: 2px solid #bc39fd; /* Borde Púrpura de tinta sólido */
+            box-shadow: 0px 0px 15px rgba(188, 57, 253, 0.4); /* Glow Púrpura */
+        }
+
+        /* Estilo para el título del Expander */
+        div[data-testid="stExpander"] p {
+            color: white !important; /* Título en blanco para contraste */
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+        }
+
+        /* 5. Los Botones (Efecto de Flujo de Tinta sin fondo sólido) */
         div.stButton > button {
-            width: 100%;
-            background: transparent !important;
-            color: #bc39fd !important;
-            border: 2px solid #bc39fd !important;
-            border-radius: 15px !important;
-            font-family: 'Orbitron', sans-serif !important;
-            transition: 0.4s !important;
+            background: transparent;
+            color: #bc39fd;
+            border: 2px solid #bc39fd;
+            border-radius: 25px; /* Más redondeado para fluidez */
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 12px 24px;
+            transition: 0.4s;
         }
 
         div.stButton > button:hover {
-            background: #bc39fd !important;
-            color: #000 !important;
-            box-shadow: 0px 0px 20px #bc39fd !important;
+            background: #bc39fd;
+            color: #05000a;
+            box-shadow: 0px 0px 20px rgba(188, 57, 253, 0.7); /* Glow Púrpura intenso */
         }
 
-        /* 8. MENÚ LATERAL (SIDEBAR) */
-        [data-testid="stSidebar"] .stRadio label {
-            color: #00d4ff !important;
-            font-family: 'Orbitron', sans-serif !important;
-            font-size: 16px !important;
-        }
+        /* 6. Sidebar y Elementos de Navegación */
+        .css-1634w92 { background-color: #05000a; } /* Fondo Sidebar */
+        .stRadio label { color: #00d4ff !important; } /* Texto Sidebar en Cian */
+        .stRadio div[role="radiogroup"] { font-family: 'Orbitron', sans-serif; } /* Tipografía menú */
         
-        /* Slogan en el Sidebar */
-        .slogan-side {
-            font-size: 10px;
-            color: #bc39fd;
-            text-align: center;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-top: 20px;
+        /* Estilo para los Inputs (Formularios) */
+        div[data-testid="stForm"] {
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            padding: 25px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.6);
         }
     </style>
 ''', unsafe_allow_html=True)
