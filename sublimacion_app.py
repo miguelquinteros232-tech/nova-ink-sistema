@@ -13,54 +13,32 @@ import streamlit as st
 import pandas as pd
 
 # ==========================================
-# 1. ESTILOS GLOBALES (VISIBILIDAD Y NEÓN)
+# 1. ESTILOS DE INTERFAZ (LOGOS Y COLORES)
 # ==========================================
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
-
-        /* Fondo Negro Absoluto */
         .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
-        [data-testid="stSidebar"] { 
-            background-color: #050505 !important; 
-            border-right: 1px solid #1a1a1a !important; 
-        }
-
-        /* Texto Blanco Forzado */
+        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
         h1, h2, h3, p, span, label, div { color: white !important; }
-
-        /* Estilo de Botones del Menú */
         div[role="radiogroup"] label {
-            background: #0d0d0d !important;
-            border: 1px solid #1a1a1a !important;
-            padding: 15px 20px !important;
-            border-radius: 12px !important;
-            margin-bottom: 10px !important;
-            transition: 0.3s all ease;
+            background: #0d0d0d !important; border: 1px solid #1a1a1a !important;
+            padding: 15px 20px !important; border-radius: 12px !important; margin-bottom: 10px !important;
         }
-        div[role="radiogroup"] label:hover {
-            border-color: #00d4ff !important;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-            transform: translateX(5px);
-        }
-        div[role="radiogroup"] label p { font-weight: 700 !important; color: #888 !important; }
-        div[role="radiogroup"] label:hover p { color: white !important; }
+        div[role="radiogroup"] label:hover { border-color: #00d4ff !important; transform: translateX(5px); }
     </style>
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. SIDEBAR Y LOGO (LÍNEA 177 CORREGIDA)
+# 2. SIDEBAR Y LOGO (LÍNEA 175 CORREGIDA)
 # ==========================================
 with st.sidebar:
-    # EL LOGO CON EFECTO NEÓN (Aquí es donde daba el error de indentación)
+    # EL LOGO CON EFECTO NEÓN (Indentado con 4 espacios exactos)
     st.write(f'''
         <div style="text-align: center; margin: 20px 0 40px 0;">
             <h1 style="
-                font-family: 'Orbitron', sans-serif; 
-                font-size: 38px; 
-                font-weight: 700;
-                color: #FFFFFF !important;
-                text-shadow: 0 0 20px #00d4ff, 0 0 5px #ffffff; 
+                font-family: 'Orbitron', sans-serif; font-size: 38px; font-weight: 700;
+                color: #FFFFFF !important; text-shadow: 0 0 20px #00d4ff, 0 0 5px #ffffff; 
                 margin: 0;
             ">
                 NOVA INK<span style="color: #00d4ff !important;">.</span>
@@ -68,37 +46,29 @@ with st.sidebar:
         </div>
     ''', unsafe_allow_html=True)
     
-    # Menú de Navegación Único
+    # Menú Único
     menu = st.radio("", [
-        "📊 DASHBOARD", 
-        "🛍️ PEDIDOS", 
-        "📦 STOCK", 
-        "📜 HISTORIAL", 
-        "💰 COTIZADOR"
+        "📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"
     ], key="nav_nova_ink_final")
-    
-    st.write("---")
 
 # ==========================================
-# 3. LÓGICA DEL DASHBOARD (CEROS FORZADOS)
+# 3. DASHBOARD CON CEROS (OBLIGATORIOS)
 # ==========================================
 if "DASHBOARD" in menu:
-    # 1. Aseguramos que las variables existan en 0
+    # Definimos ceros por defecto para que las tarjetas nunca desaparezcan
     v_pedidos = 0
     v_monto = 0.0
-    
-    # 2. Tu lógica para cargar datos (Mantenla aquí)
+
     try:
-        # Aquí usa tus variables reales, ejemplo: if not df_act.empty...
+        # Aquí iría tu lógica para cargar df_act de Google Sheets
         if 'df_act' in locals() and not df_act.empty:
             v_pedidos = len(df_act)
             v_monto = df_act['Monto'].sum()
     except:
-        pass # Si falla, se quedan en 0
+        pass
 
-    # 3. Renderizado de Tarjetas Visuales (Estilo Imagen 3)
+    # Renderizado de Tarjetas
     col1, col2 = st.columns(2)
-    
     with col1:
         st.write(f'''
             <div style="background: linear-gradient(145deg, #111, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
@@ -106,7 +76,6 @@ if "DASHBOARD" in menu:
                 <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: white !important; margin: 10px 0 0 0;">{v_pedidos}</h2>
             </div>
         ''', unsafe_allow_html=True)
-        
     with col2:
         st.write(f'''
             <div style="background: linear-gradient(145deg, #111, #050505); border: 1px solid #222; padding: 35px; border-radius: 20px; text-align: center;">
@@ -114,9 +83,6 @@ if "DASHBOARD" in menu:
                 <h2 style="font-family: 'Orbitron', sans-serif; font-size: 45px; color: #00d4ff !important; margin: 10px 0 0 0;">${v_monto:,.0f}</h2>
             </div>
         ''', unsafe_allow_html=True)
-
-    st.write("---")
-
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
