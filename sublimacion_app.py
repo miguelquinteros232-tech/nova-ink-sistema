@@ -68,7 +68,7 @@ if st.session_state.get("authentication_status") is not True:
                     with open("config_pro.yaml", 'w') as f: yaml.dump(config, f, default_flow_style=False)
                     st.success("✅ Usuario creado."); time.sleep(1); st.rerun()
 
-# --- 4. APLICACIÓN PRINCIPAL (REEMPLAZAR TODO DESDE AQUÍ) ---
+# --- 4. APLICACIÓN PRINCIPAL (CÓDIGO CORREGIDO Y ROBUSTO) ---
 elif st.session_state["authentication_status"]:
     @st.cache_resource
     def get_sh_conn():
@@ -94,15 +94,22 @@ elif st.session_state["authentication_status"]:
             ''', unsafe_allow_html=True)
             menu = st.radio("", ["📊 DASHBOARD", "🛍️ PEDIDOS", "📦 STOCK", "📜 HISTORIAL", "💰 COTIZADOR"], key="nav_nova_ink")
 
-        # --- SECCIÓN DASHBOARD (CON ACCIONES RÁPIDAS) ---
+        # --- SECCIÓN DASHBOARD ---
         if "📊 DASHBOARD" in menu:
             try:
-                df_p = pd.DataFrame(ws_p.get_all_records())
-                df_act = df_p[df_p['Estado'] != 'Vendido'] if not df_p.empty else pd.DataFrame()
-                df_vendidos = df_p[df_p['Estado'] == 'Vendido'] if not df_p.empty else pd.DataFrame()
-                v_monto = pd.to_numeric(df_vendidos['Monto'], errors='coerce').sum()
+                data_p = ws_p.get_all_records()
+                df_p = pd.DataFrame(data_p)
+                # Normalizamos nombres de columnas para evitar errores de tildes
+                df_p.columns = [str(c).strip() for c in df_p.columns]
+                
+                estado_col = 'Estado' if 'Estado' in df_p.columns else df_p.columns[6]
+                monto_col = 'Monto' if 'Monto' in df_p.columns else df_p.columns[5]
+
+                df_act = df_p[df_p[estado_col] != 'Vendido'] if not df_p.empty else pd.DataFrame()
+                df_vendidos = df_p[df_p[estado_col] == 'Vendido'] if not df_p.empty else pd.DataFrame()
+                v_monto = pd.to_numeric(df_vendidos[monto_col], errors='coerce').sum()
                 v_pedidos = len(df_act)
-            except:
+            except Exception as e:
                 v_pedidos, v_monto, df_act = 0, 0, pd.DataFrame()
 
             col1, col2 = st.columns(2)
@@ -111,78 +118,85 @@ elif st.session_state["authentication_status"]:
             with col2:
                 st.write(f'<div style="background: linear-gradient(145deg, #0d0d0d, #050505); border: 1px solid #222; padding: 35px; border-radius: 15px; text-align: center;"><p style="color: #666 !important; font-size: 12px; font-weight: bold;">VENTAS REALIZADAS</p><h2 style="color: #00d4ff !important; font-family: Orbitron; font-size: 45px;">${v_monto:,.0f}</h2></div>', unsafe_allow_html=True)
             
-            st.write("### 🔍 GESTIÓN RÁPIDA DE PEDIDOS")
+            st.write("### 🔍 GESTIÓN RÁPIDA")
             if not df_act.empty:
                 for i, row in df_act.iterrows():
-                    with st.expander(f"🔹 {row['Cliente']} | {row['Producto']} (${row['Monto']})"):
-                        st.write(f"**Descripción:** {row['Descripción']}")
-                        c1, c2, c3 = st.columns(3)
-                        # El índice real en Sheets es i + 2
-                        if c1.button("✅ MARCAR VENDIDO", key=f"v_{i}"):
+                    with st.expander(f"🔹 {row.get('Cliente', 'S/N')} | {row.get('Producto', 'S/P')}"):
+                        c1, c2 = st.columns(2)
+                        if c1.button("✅ VENDIDO", key=f"v_{i}"):
                             ws_p.update_cell(i+2, 7, "Vendido")
                             st.rerun()
-                        if c2.button("❌ ELIMINAR / CANCELAR", key=f"d_{i}"):
+                        if c2.button("❌ ELIMINAR", key=f"d_{i}"):
                             ws_p.delete_rows(i+2)
                             st.rerun()
-                        st.info(f"Estado: {row['Estado']} | Pago: {row['Estado Pago']}")
             else:
-                st.info("No hay pedidos activos.")
+                st.info("Sin pedidos activos.")
 
-        # --- SECCIÓN PEDIDOS (MODIFICACIÓN COMPLETA) ---
+        # --- SECCIÓN PEDIDOS ---
         elif "🛍️ PEDIDOS" in menu:
             tab1, tab2 = st.tabs(["NUEVO PEDIDO", "MODIFICAR / EDITAR"])
-            df_inv = pd.DataFrame(ws_i.get_all_records())
             
             with tab1:
+                df_inv = pd.DataFrame(ws_i.get_all_records())
                 with st.form("n_p"):
                     c1, c2 = st.columns(2)
                     cli, prd = c1.text_input("Cliente"), c1.text_input("Producto")
                     det, pago = c2.text_area("Descripción"), c2.selectbox("Estado Pago", ["No Pago", "Seña", "Pagado Total"])
-                    mon = st.number_input("Precio Final $")
-                    mat = st.selectbox("Insumo a descontar", df_inv['Nombre'].tolist() if not df_inv.empty else [])
+                    mon = st.number_input("Precio Final $", min_value=0.0)
+                    mat = st.selectbox("Insumo", df_inv['Nombre'].tolist() if not df_inv.empty else ["Sin stock"])
                     can = st.number_input("Cantidad a restar", min_value=0.0)
-                    if st.form_submit_button("REGISTRAR"):
-                        idx = df_inv[df_inv['Nombre'] == mat].index[0]
-                        ws_i.update_cell(idx+2, 6, float(df_inv.at[idx, 'Cantidad']) - can)
+                    if st.form_submit_button("REGISTRAR PEDIDO"):
+                        if not df_inv.empty and mat != "Sin stock":
+                            idx = df_inv[df_inv['Nombre'] == mat].index[0]
+                            ws_i.update_cell(idx+2, 6, float(df_inv.at[idx, 'Cantidad']) - can)
                         ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, det, mon, "Producción", 0, pago])
-                        st.success("Registrado."); st.rerun()
+                        st.success("Registrado."); time.sleep(1); st.rerun()
             
             with tab2:
-                df_p = pd.DataFrame(ws_p.get_all_records())
+                data_p = ws_p.get_all_records()
+                df_p = pd.DataFrame(data_p)
                 if not df_p.empty:
-                    opciones = [f"{i+2} | {row['Cliente']} - {row['Producto']}" for i, row in df_p.iterrows()]
-                    sel = st.selectbox("Seleccionar Pedido para editar cualquier dato", opciones)
+                    # Limpiamos columnas para el formulario de edición
+                    df_p.columns = [str(c).strip() for c in df_p.columns]
+                    opciones = [f"{i+2} | {row.get('Cliente','?')} - {row.get('Producto','?')}" for i, row in df_p.iterrows()]
+                    sel = st.selectbox("Seleccionar para editar", opciones)
                     if sel:
                         fila = int(sel.split(" | ")[0])
                         datos = df_p.iloc[fila-2]
-                        with st.form("edit_p"):
+                        with st.form("edit_p_completo"):
                             c1, c2 = st.columns(2)
-                            e_cli = c1.text_input("Cliente", value=datos['Cliente'])
-                            e_prd = c1.text_input("Producto", value=datos['Producto'])
-                            e_mon = c1.number_input("Monto $", value=float(datos['Monto']))
-                            e_det = c2.text_area("Descripción", value=datos['Descripción'])
-                            e_est = c2.selectbox("Estado", ["Producción", "Pendiente", "Vendido"], index=["Producción", "Pendiente", "Vendido"].index(datos['Estado']))
-                            e_pag = c2.selectbox("Pago", ["No Pago", "Seña", "Pagado Total"], index=["No Pago", "Seña", "Pagado Total"].index(datos['Estado Pago']))
-                            if st.form_submit_button("GUARDAR CAMBIOS TOTALES"):
-                                # Actualizamos celda por celda según tus columnas
+                            e_cli = c1.text_input("Cliente", value=str(datos.get('Cliente', '')))
+                            e_prd = c1.text_input("Producto", value=str(datos.get('Producto', '')))
+                            # Buscamos 'Monto' o la columna 5 (índice 5 en lista de 0-8)
+                            val_monto = datos.get('Monto', datos.iloc[5])
+                            e_mon = c1.number_input("Monto $", value=float(val_monto) if val_monto else 0.0)
+                            
+                            # SOLUCIÓN AL KEYERROR: Usamos .get() con nombres comunes o posición
+                            val_det = datos.get('Descripción', datos.get('Descripcion', datos.iloc[4]))
+                            e_det = c2.text_area("Descripción", value=str(val_det))
+                            
+                            e_est = c2.selectbox("Estado", ["Producción", "Pendiente", "Vendido"])
+                            e_pag = c2.selectbox("Pago", ["No Pago", "Seña", "Pagado Total"])
+                            
+                            if st.form_submit_button("GUARDAR CAMBIOS"):
                                 ws_p.update_cell(fila, 3, e_cli)
                                 ws_p.update_cell(fila, 4, e_prd)
                                 ws_p.update_cell(fila, 5, e_det)
                                 ws_p.update_cell(fila, 6, e_mon)
                                 ws_p.update_cell(fila, 7, e_est)
                                 ws_p.update_cell(fila, 9, e_pag)
-                                st.success("¡Datos actualizados!"); time.sleep(1); st.rerun()
+                                st.success("Actualizado."); time.sleep(1); st.rerun()
 
         # --- SECCIÓN STOCK ---
         elif "📦 STOCK" in menu:
             df_st = pd.DataFrame(ws_i.get_all_records())
             st.dataframe(df_st, use_container_width=True)
             with st.expander("➕ AGREGAR MATERIAL"):
-                with st.form("add_s"):
+                with st.form("add_s_new"):
                     c1, c2 = st.columns(2)
                     cat, nom, tip = c1.text_input("Categoría"), c1.text_input("Nombre"), c1.text_input("Tipo")
                     tal, col, can, uni = c2.text_input("Talle"), c2.text_input("Color"), c2.number_input("Cantidad"), c2.text_input("Unidad")
-                    if st.form_submit_button("CARGAR"):
+                    if st.form_submit_button("CARGAR A INVENTARIO"):
                         ws_i.append_row([cat, nom, tip, tal, col, can, uni]); st.rerun()
 
         # --- SECCIÓN HISTORIAL ---
@@ -190,12 +204,16 @@ elif st.session_state["authentication_status"]:
             df_h = pd.DataFrame(ws_p.get_all_records())
             if not df_h.empty:
                 st.write("### ✅ Ventas Finalizadas")
-                st.table(df_h[df_h['Estado'] == 'Vendido'])
+                st.table(df_h[df_h.iloc[:, 6] == 'Vendido'])
 
         # --- SECCIÓN COTIZADOR ---
         elif "💰 COTIZADOR" in menu:
-            c1, c2 = st.columns(2)
-            ins, hrs, v_h = c1.number_input("Insumos $"), c1.number_input("Horas"), c1.number_input("Valor Hora $", 2000.0)
-            mrg = c2.slider("% Ganancia", 0, 400, 100)
-            total = (ins + (hrs * v_h)) * (1 + mrg/100)
-            st.title(f"Sugerido: ${total:,.2f}")
+            with st.form("cotiz"):
+                c1, c2 = st.columns(2)
+                ins = c1.number_input("Insumos $", min_value=0.0)
+                hrs = c1.number_input("Horas", min_value=0.0)
+                v_h = c1.number_input("Valor Hora $", value=2000.0)
+                mrg = c2.slider("% Ganancia", 0, 400, 100)
+                if st.form_submit_button("CALCULAR"):
+                    total = (ins + (hrs * v_h)) * (1 + mrg/100)
+                    st.metric("Precio Sugerido", f"${total:,.2f}")
