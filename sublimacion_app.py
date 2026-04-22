@@ -9,72 +9,81 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. CAPA VISUAL (SOLO CSS, NO TOCA TU LÓGICA) ---
-st.set_page_config(page_title="NOVA INK", layout="wide")
-
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* 1. FONDO NEGRO Y TEXTOS BLANCOS FORZADOS */
+        /* 1. FONDO NEGRO PURO */
         .stApp { background-color: #000000 !important; }
         [data-testid="stSidebar"] { background-color: #050505 !important; }
         
-        /* Forzar que todos los textos de Streamlit se vean */
-        .stMarkdown, p, label, h1, h2, h3, span { 
-            color: #ffffff !important; 
-        }
+        /* Forzar visibilidad de textos */
+        .stMarkdown, p, label, span { color: #ffffff !important; }
 
-        /* 2. LOGO NOVA INK */
-        .logo-container { text-align: center; padding: 20px 0; margin-bottom: 20px; }
+        /* 2. LOGO NOVA INK (RESTAURADO) */
+        .logo-container { 
+            text-align: center; 
+            margin: 40px 0; 
+            display: block !important; 
+        }
         .logo-text {
             font-family: 'Orbitron', sans-serif;
-            font-size: 45px; font-weight: 700;
+            font-size: 55px; font-weight: 700;
             color: #ffffff !important;
-            letter-spacing: 3px;
+            letter-spacing: 5px;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
         }
         .logo-text span { color: #00d4ff !important; text-shadow: 0 0 20px #00d4ff; }
 
-        /* 3. MENÚ LATERAL: CELDAS DE LUZ CON ICONOS */
+        /* 3. NAVEGADOR CON BRILLO LATERAL (CAPTURA 3) */
         div[role="radiogroup"] label {
             background: #111111 !important;
             border: 1px solid #222222 !important;
             padding: 15px 20px !important;
             border-radius: 12px !important;
-            margin-bottom: 10px !important;
-            transition: 0.3s all ease !important;
+            margin-bottom: 12px !important;
+            transition: 0.3s all ease-in-out !important;
+            display: flex !important;
+            align-items: center !important;
         }
 
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
-            transform: translateX(10px);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4) !important;
+            transform: translateX(10px); /* Efecto de desplazamiento */
         }
 
-        /* 4. TARJETAS DEL DASHBOARD (VISIBILIDAD TOTAL) */
-        .glass-card {
-            background-color: #111111 !important;
-            border: 2px solid #222222 !important;
-            padding: 30px !important;
+        /* Ocultar el círculo del radio para que parezca un botón */
+        div[role="radiogroup"] [data-testid="stWidgetLabel"] { display: none; }
+        div[role="radiogroup"] label [data-testid="stMarkdownContainer"] p {
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px;
+        }
+
+        /* 4. DASHBOARD: TARJETAS DE BALANCE VISIBLES */
+        .metric-card {
+            background: linear-gradient(145deg, #151515, #050505) !important;
+            border: 1px solid #333333 !important;
+            padding: 35px !important;
             border-radius: 20px !important;
             text-align: center !important;
-            margin: 10px 0 !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         
-        .card-title {
+        .metric-label {
             color: #888888 !important;
             font-size: 14px !important;
             letter-spacing: 2px;
             font-weight: 700;
-            margin-bottom: 10px;
+            text-transform: uppercase;
         }
 
-        .card-value {
+        .metric-value {
             font-family: 'Orbitron', sans-serif !important;
-            font-size: 48px !important;
+            font-size: 50px !important;
             font-weight: 700 !important;
-            margin: 0 !important;
+            margin-top: 10px !important;
         }
     </style>
 ''', unsafe_allow_html=True)
