@@ -14,7 +14,7 @@ st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* FONDO NEGRO PURO */
+        /* FONDO NEGRO Y LIMPIEZA */
         .stApp { background-color: #000000 !important; }
         [data-testid="stSidebar"] { 
             background-color: #050505 !important; 
@@ -51,7 +51,7 @@ st.markdown('''
         }
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* TARJETAS DASHBOARD (BALANCES) */
+        /* TARJETAS DASHBOARD */
         .metric-card {
             background: linear-gradient(145deg, #111, #050505);
             border: 1px solid #252525;
@@ -61,20 +61,22 @@ st.markdown('''
             margin-bottom: 15px;
         }
         .metric-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; margin-top: 10px; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 45px; font-weight: 700; margin-top: 10px; color: white !important; }
         
-        /* Forzar textos blancos en el resto de la app */
+        /* Forzar visibilidad de textos */
         .stMarkdown, p, label, h1, h2, h3 { color: white !important; }
     </style>
 ''', unsafe_allow_html=True)
 
-# --- 2. NAVEGACIÓN Y LOGUEO ---
-# IMPORTANTE: Asegúrate de que este bloque esté DEBAJO de donde creas el objeto 'authenticator'
+# --- 2. CONFIGURACIÓN Y AUTENTICACIÓN (BLOQUE CRÍTICO) ---
+# (Asegúrate de que tus funciones load_config y el objeto authenticator estén definidos aquí arriba)
+
 if st.session_state.get("authentication_status"):
+    # RECIÉN AQUÍ, CUANDO EL LOGIN ES EXITOSO, MOSTRAMOS EL MENÚ
     with st.sidebar:
         st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
         
-        # NAVEGADOR CON ICONOS (Items personalizados)
+        # NAVEGADOR CON ICONOS (Items para cada sección)
         menu = st.radio("", [
             "📊 DASHBOARD", 
             "🛍️ PEDIDOS", 
@@ -84,29 +86,26 @@ if st.session_state.get("authentication_status"):
         ])
         
         st.write("---")
-        # Aquí se soluciona el NameError: solo se llama si el usuario está ok.
+        # Ahora 'authenticator' ya existe y no dará NameError
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
     # --- 3. CONTENIDO PRINCIPAL (DASHBOARD) ---
     if "DASHBOARD" in menu:
-        # El logo aparece centrado arriba
         st.markdown('<div class="logo-container"><div class="logo-text">NOVA INK<span>.</span></div></div>', unsafe_allow_html=True)
         
-        # Usamos tus datos de Google Sheets (df_act)
+        # Validación de datos (df_act debe ser el dataframe de tus pedidos activos)
         if 'df_act' in locals() or 'df_act' in globals():
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">PEDIDOS ACTIVOS</div>
-                    <div class="metric-value" style="color:white;">{len(df_act)}</div>
+                    <div class="metric-value">{len(df_act)}</div>
                 </div>''', unsafe_allow_html=True)
             with c2:
                 st.markdown(f'''<div class="metric-card">
                     <div class="metric-label">BALANCE PENDIENTE</div>
                     <div class="metric-value" style="color:#00d4ff;">${df_act['Monto'].sum():,.0f}</div>
                 </div>''', unsafe_allow_html=True)
-        else:
-            st.warning("Cargando datos del sistema...")
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
