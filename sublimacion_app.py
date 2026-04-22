@@ -9,70 +9,111 @@ import time
 from datetime import datetime
 import os
 
+# --- 1. CAPA VISUAL DEFINITIVA (FORZANDO VISIBILIDAD) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* 1. FONDO Y VISIBILIDAD BASE */
-        .stApp, [data-testid="stHeader"] { background-color: #000000 !important; }
-        
-        /* Forzamos que TODO el texto sea blanco para que no se pierda nada */
-        div, span, p, label, h1, h2, h3, .stMarkdown { color: #ffffff !important; }
+        /* FONDO NEGRO ABSOLUTO */
+        .stApp, [data-testid="stHeader"], .main { background-color: #000000 !important; }
+        [data-testid="stSidebar"] { background-color: #050505 !important; border-right: 1px solid #1a1a1a !important; }
 
-        /* 2. LOGO NOVA INK CON EFECTOS DE LUZ */
-        .logo-nav {
+        /* EL LOGO (CON EFECTOS DE NEÓN) */
+        .logo-box {
+            text-align: center; margin: 20px 0 40px 0;
             font-family: 'Orbitron', sans-serif;
-            font-size: 38px; font-weight: 700;
-            text-align: center; margin: 30px 0;
-            background: linear-gradient(to bottom, #ffffff, #888888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.4));
+            font-size: 40px; font-weight: 700;
+            color: #ffffff !important;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.4);
         }
-        .logo-nav span { 
-            -webkit-text-fill-color: #00d4ff !important; 
-            text-shadow: 0 0 15px #00d4ff; 
-        }
+        .logo-box span { color: #00d4ff !important; }
 
-        /* 3. MENÚ LATERAL (ITEMS CON IDENTIDAD) */
-        [data-testid="stSidebar"] { 
-            background-color: #050505 !important; 
-            border-right: 1px solid #1a1a1a !important; 
-        }
-        
+        /* MENÚ LATERAL: ITEMS CON LUZ (IMAGEN 3) */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
-            border: 1px solid #1a1a1a !important;
-            padding: 18px 22px !important;
+            border: 1px solid #222 !important;
+            padding: 18px 25px !important;
             border-radius: 12px !important;
             margin-bottom: 12px !important;
             transition: 0.3s all ease !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2) !important;
-            transform: translateX(8px);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
+            transform: translateX(10px);
         }
-        /* Texto del menú cuando no está seleccionado */
         div[role="radiogroup"] label p {
-            color: #666 !important; font-weight: 700 !important; font-size: 14px !important;
+            color: #888888 !important; font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important; font-size: 15px !important;
         }
-        /* Texto del menú cuando pasas el mouse */
         div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* 4. TARJETAS DEL DASHBOARD (EFECTO GLASSMISM) */
-        .metric-card {
-            background: linear-gradient(145deg, #0f0f0f, #050505);
-            border: 1px solid #222;
-            padding: 35px 20px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        /* TARJETAS DASHBOARD (PARA BALANCES) */
+        .dashboard-card {
+            background: linear-gradient(145deg, #111, #050505) !important;
+            border: 1px solid #252525 !important;
+            padding: 40px !important;
+            border-radius: 20px !important;
+            text-align: center !important;
+            margin-bottom: 20px !important;
         }
-        .metric-label { color: #555 !important; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 700; color: #ffffff !important; }
+        .card-label { color: #666 !important; font-size: 13px; font-weight: 700; letter-spacing: 3px; }
+        .card-value { 
+            font-family: 'Orbitron', sans-serif !important; 
+            font-size: 45px !important; color: #ffffff !important; 
+            font-weight: 700 !important; margin-top: 10px !important;
+        }
+
+        /* FORZAR TEXTOS BLANCOS EN TODA LA APP */
+        h1, h2, h3, p, label, span, .stMarkdown { color: #ffffff !important; }
     </style>
 ''', unsafe_allow_html=True)
+
+# --- 2. NAVEGACIÓN (UN SOLO SIDEBAR) ---
+if st.session_state.get("authentication_status"):
+    with st.sidebar:
+        # Logo con efectos
+        st.markdown('<div class="logo-box">NOVA INK<span>.</span></div>', unsafe_allow_html=True)
+        
+        # Un solo radio button con iconos
+        menu = st.radio("", [
+            "📊 DASHBOARD", 
+            "🛍️ PEDIDOS", 
+            "📦 STOCK", 
+            "📜 HISTORIAL", 
+            "💰 COTIZADOR"
+        ])
+        
+        st.write("---")
+        try:
+            authenticator.logout('Cerrar Sesión', 'sidebar')
+        except:
+            pass
+
+    # --- 3. LÓGICA DEL DASHBOARD (AQUÍ ES DONDE APARECEN TUS BALANCES) ---
+    if "DASHBOARD" in menu:
+        # Asegúrate de que df_act tenga los datos de tus pedidos actuales
+        try:
+            # Reutilizo tus variables actuales
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f'''<div class="dashboard-card">
+                    <div class="card-label">PEDIDOS ACTIVOS</div>
+                    <div class="card-value">{len(df_act)}</div>
+                </div>''', unsafe_allow_html=True)
+            with col2:
+                # Cambia 'df_act' por el nombre de tu dataframe real si es distinto
+                balance_total = df_act['Monto'].sum()
+                st.markdown(f'''<div class="dashboard-card">
+                    <div class="card-label">BALANCE PENDIENTE</div>
+                    <div class="card-value" style="color:#00d4ff;">${balance_total:,.0f}</div>
+                </div>''', unsafe_allow_html=True)
+            
+            st.write("---")
+            st.subheader("Pedidos en curso")
+            st.dataframe(df_act) # Tu tabla normal
+        except Exception as e:
+            st.warning("Cargando datos desde la nube...")
 
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
