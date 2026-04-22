@@ -9,69 +9,67 @@ import time
 from datetime import datetime
 import os
 
-# --- 1. ESTILO VISUAL (CAPTURA 3 + NEÓN CIAN) ---
 st.markdown('''
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
 
-        /* RESET PARA FONDO NEGRO PURO */
-        .main, .stApp, [data-testid="stHeader"] {
+        /* 1. LIMPIEZA DE FONDO */
+        .stApp, [data-testid="stHeader"], .main {
             background-color: #000000 !important;
         }
-        
-        /* SIDEBAR ESTILO CAPTURA 3 */
-        [data-testid="stSidebar"] {
-            background-color: #050505 !important;
-            border-right: 1px solid #1a1a1a !important;
-            min-width: 300px !important;
-        }
 
-        /* TEXTOS FORZADOS A BLANCO */
-        .stMarkdown, p, label, h1, h2, h3, span {
+        /* 2. LOGO EN EL SIDEBAR (ESTILO CAPTURA 3) */
+        .logo-nav {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 38px; font-weight: 700;
+            text-align: center; margin-bottom: 40px;
             color: #ffffff !important;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
         }
+        .logo-nav span { color: #00d4ff !important; }
 
-        /* DISEÑO DE LOS ITEMS DEL MENÚ (COMO EN LA IMAGEN) */
+        /* 3. MENÚ LATERAL: BOTONES DE LUZ */
         div[role="radiogroup"] label {
             background: #0d0d0d !important;
-            border: 1px solid #222 !important;
+            border: 1px solid #1a1a1a !important;
             padding: 15px 20px !important;
-            border-radius: 10px !important;
-            margin-bottom: 8px !important;
+            border-radius: 12px !important;
+            margin-bottom: 12px !important;
             transition: 0.3s all ease !important;
         }
         div[role="radiogroup"] label:hover {
             border-color: #00d4ff !important;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3) !important;
             transform: translateX(10px);
         }
+        /* Color del texto del menú */
         div[role="radiogroup"] label p {
-            font-family: 'Inter', sans-serif !important;
+            color: #777777 !important;
             font-weight: 700 !important;
-            color: #888 !important;
+            font-size: 14px !important;
         }
-        div[role="radiogroup"] label:hover p { color: #00d4ff !important; }
+        div[role="radiogroup"] label:hover p { color: #ffffff !important; }
 
-        /* LOGO NOVA INK */
-        .logo-nav {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 40px; text-align: center; margin-bottom: 30px;
-            text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-        }
-        .logo-nav span { color: #00d4ff; }
-
-        /* TARJETAS DE DASHBOARD (Asegúrate de usar estas clases en tu lógica) */
-        .metric-container {
-            background: linear-gradient(145deg, #111, #050505);
-            border: 1px solid #222;
-            padding: 30px;
-            border-radius: 15px;
+        /* 4. TARJETAS DEL DASHBOARD (PARA TUS BALANCES) */
+        .nova-card {
+            background: linear-gradient(145deg, #0f0f0f, #050505);
+            border: 1px solid #222222;
+            padding: 35px 20px;
+            border-radius: 20px;
             text-align: center;
+            margin-bottom: 20px;
         }
-        .metric-title { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
-        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 40px; color: white; }
+        .nova-label { color: #666; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+        .nova-value { 
+            font-family: 'Orbitron', sans-serif; font-size: 42px; 
+            color: #ffffff !important; font-weight: 700; 
+        }
+
+        /* 5. FORZAR TEXTOS DE LA APP A BLANCO */
+        h1, h2, h3, .stMarkdown p, label { color: #ffffff !important; }
     </style>
 ''', unsafe_allow_html=True)
+
 # --- 2. TU LÓGICA DE CONFIGURACIÓN (TAL CUAL LA ENVIASTE) ---
 def load_config():
     file_path = "config_pro.yaml"
