@@ -32,7 +32,7 @@ def load_config():
 
 config = load_config()
 
-# --- 3. SISTEMA DE AUTENTICACIÓN ---
+# --- 3. SISTEMA DE AUTENTICACIÓN (NUEVA VERSIÓN) ---
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -42,23 +42,19 @@ authenticator = stauth.Authenticate(
 
 st.markdown('<div class="main-logo">NOVA INK</div>', unsafe_allow_html=True)
 
-# LOGIN DIRECTO (Sin Tabs para evitar el error de visualización)
-name, authentication_status, username = authenticator.login('Login', 'main')
+# LA CORRECCIÓN CRÍTICA: En la nueva versión solo se pasa 'location'
+authenticator.login(location='main')
 
 if st.session_state["authentication_status"] is False:
     st.error('Usuario o contraseña incorrectos')
-    if st.button("¿No tienes cuenta? Regístrate aquí"):
-        st.session_state["mostrar_registro"] = True
-
 elif st.session_state["authentication_status"] is None:
-    st.info('Ingresa tus credenciales para acceder.')
-    # Opción de registro por si es la primera vez
-    with st.expander("📝 ¿ERES NUEVO? REGÍSTRATE AQUÍ"):
+    st.info('Ingresa tus credenciales.')
+    with st.expander("📝 REGISTRARSE"):
         try:
-            if authenticator.register_user('Registrar usuario', location='main'):
+            if authenticator.register_user(location='main'):
                 with open("config_pro.yaml", 'w') as f:
                     yaml.dump(config, f, default_flow_style=False)
-                st.success('¡Usuario creado! Ahora ingresa tus datos arriba.')
+                st.success('¡Usuario creado! Ya puedes iniciar sesión arriba.')
         except Exception as e:
             st.error(f"Error: {e}")
 
@@ -75,17 +71,17 @@ elif st.session_state["authentication_status"]:
             credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
             return gspread.authorize(credentials)
         except Exception as e:
-            st.error(f"Error de credenciales: {e}")
+            st.error(f"Error: {e}")
             st.stop()
 
+    # Conexión a Google Sheets
     try:
         client = get_gspread_client()
-        SHEET_ID = "11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8"
-        sh = client.open_by_key(SHEET_ID)
+        sh = client.open_by_key("11n1oFM8CNn9N_HfI0wOyMzZ7G17Og9d8w27FXUyjOF8")
         ws_p = sh.worksheet("Pedidos")
         ws_i = sh.worksheet("Inventario")
     except Exception as e:
-        st.error(f"Error de conexión: {e}")
+        st.error("Error de conexión. Verifica permisos en el Excel.")
         st.stop()
 
     with st.sidebar:
@@ -93,7 +89,7 @@ elif st.session_state["authentication_status"]:
         menu = st.radio("MENÚ", ["📊 DASHBOARD", "📦 STOCK", "📝 NUEVO PEDIDO", "💰 COTIZADOR"])
         authenticator.logout('Cerrar Sesión', 'sidebar')
 
-    # CONTENIDO SEGÚN MENÚ
+    # --- CONTENIDO ---
     if menu == "📊 DASHBOARD":
         df_p = pd.DataFrame(ws_p.get_all_records())
         if not df_p.empty:
@@ -122,15 +118,16 @@ elif st.session_state["authentication_status"]:
         with st.form("new"):
             cli, prd = st.text_input("Cliente"), st.text_input("Producto")
             mon = st.number_input("Monto $")
-            mat = st.selectbox("Material", df_inv['Nombre'].tolist() if not df_inv.empty else [])
+            mats = df_inv['Nombre'].tolist() if not df_inv.empty else []
+            mat = st.selectbox("Insumo", mats)
             can_u = st.number_input("Cantidad", min_value=0.1)
             if st.form_submit_button("REGISTRAR"):
                 idx = df_inv[df_inv['Nombre'] == mat].index[0]
                 nueva = float(df_inv.at[idx, 'Cantidad']) - can_u
                 ws_i.update_cell(idx+2, 6, nueva)
                 ws_p.append_row([len(ws_p.get_all_values()), datetime.now().strftime("%d/%m/%Y"), cli, prd, "", mon, "Producción", 0, ""])
-                st.success("Hecho"); st.rerun()
+                st.success("Registrado"); st.rerun()
 
     elif menu == "💰 COTIZADOR":
         costo = st.number_input("Inversión $")
-        st.title(f"Sugerido (100%): ${costo * 2:,.2f}")
+        st.title(f"Sugerido: ${costo * 2:,.2f}")
